@@ -69,7 +69,6 @@
                     🔐 SECURE LOGIN
                 </button>
             </form>
-            <p class="text-[11px] text-zinc-400 font-medium mt-4">Default: <span class="font-bold text-zinc-600">admin</span> / <span class="font-bold text-zinc-600">123456</span></p>
         </div>
     </div>
 
@@ -863,8 +862,8 @@
         var readyCategories = ["Kaftans", "Dresses", "Nightdresses", "Bottom Wear"];
         var rawCategories = ["Fabrics", "Embroidery Panels", "Threads", "Lace/Borders", "Accessories"];
 
-        var AUTH_USER = localStorage.getItem('ar_auth_user') || 'admin';
-        var AUTH_PASS = localStorage.getItem('ar_auth_pass') || '123456';
+        var AUTH_USER = localStorage.getItem('ar_auth_user') || 'ARFASHION';
+        var AUTH_PASS = localStorage.getItem('ar_auth_pass') || 'Samsul@299';
         var isLoggedIn = sessionStorage.getItem('ar_logged_in') === 'true';
 
         var currencyFormatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
