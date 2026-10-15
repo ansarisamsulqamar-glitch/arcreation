@@ -2346,23 +2346,23 @@
                 });
             }
         });
-    </script>
-<!-- ========================================================================================= -->
-    <!-- MULTI-ITEM SALES & PURCHASE BILLING ENGINE (WITH OPTIONAL TOGGLEABLE EXTRA CHARGES) -->
+    </script><!-- ========================================================================================= -->
+    <!-- UPGRADED MULTI-ITEM BILLING ENGINE WITH FULL EDIT, DELETE & CLICKABLE LEDGER SUPPORT -->
     <!-- ========================================================================================= -->
 
-    <!-- Multi-Item Sales Invoice Modal -->
+    <!-- Multi-Item Sales Invoice Modal (Supports Add & Edit) -->
     <div id="multiSellModal" class="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-2 sm:p-4">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl p-4 sm:p-6 border flex flex-col max-h-[95vh]">
             <div class="flex justify-between items-center border-b pb-3 mb-3 shrink-0">
                 <div>
-                    <h3 class="text-lg sm:text-xl font-black text-red-600 flex items-center gap-2">🧾 Create Sales Invoice (Multi-Item)</h3>
-                    <p class="text-[11px] text-zinc-500 font-semibold">एक साथ कई आइटम बेचें • नेगेटिव स्टॉक चालू है • नया आइटम यहीं से जोड़ें</p>
+                    <h3 id="msModalTitle" class="text-lg sm:text-xl font-black text-red-600 flex items-center gap-2">🧾 Create Sales Invoice (Multi-Item)</h3>
+                    <p class="text-[11px] text-zinc-500 font-semibold">एक साथ कई आइटम बेचें • बिल एडिट करें • नेगेटिव स्टॉक चालू है</p>
                 </div>
                 <button type="button" onclick="closeMultiSellModal()" class="w-8 h-8 rounded-full bg-zinc-100 hover:bg-red-100 text-zinc-600 hover:text-red-600 font-black">✕</button>
             </div>
 
             <form onsubmit="submitMultiSale(event)" class="flex-1 flex flex-col overflow-hidden space-y-3">
+                <input type="hidden" id="msEditOriginalInv" value="">
                 <!-- Top Invoice & Customer Info -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0 bg-zinc-50 p-3 rounded-2xl border">
                     <div>
@@ -2409,7 +2409,7 @@
                     </div>
                     <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
                         <label class="text-[10px] font-bold uppercase text-amber-800">Amount (₹):</label>
-                        <input type="number" id="msExtraAmount" step="0.01" min="0" value="" placeholder="0.00" oninput="calcMsTotals()" class="w-28 px-3 py-1.5 bg-white border border-amber-400 rounded-xl text-xs font-black text-amber-950 outline-none text-right">
+                        <input type="number" id="msExtraAmount" step="0.01" min="0" value="" placeholder="0.00" oninput="calcMsTotals(false)" class="w-28 px-3 py-1.5 bg-white border border-amber-400 rounded-xl text-xs font-black text-amber-950 outline-none text-right">
                         <button type="button" onclick="toggleMsExtraCharge(false)" class="px-2.5 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl text-xs font-black" title="Remove Extra Charge">✕</button>
                     </div>
                 </div>
@@ -2432,7 +2432,7 @@
                             <label class="block text-[10px] text-zinc-300 uppercase font-bold mb-0.5">Amount Received (₹)</label>
                             <input type="number" id="msAmountPaid" step="0.01" min="0" required class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-xl text-sm font-black text-white outline-none focus:border-yellow-400">
                         </div>
-                        <button type="submit" class="px-4 sm:px-5 py-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-zinc-950 rounded-xl text-xs font-black shadow-lg hover:opacity-95 whitespace-nowrap mt-3">
+                        <button type="submit" id="msSubmitBtn" class="px-4 sm:px-5 py-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-zinc-950 rounded-xl text-xs font-black shadow-lg hover:opacity-95 whitespace-nowrap mt-3">
                             ✅ Save & Print Bill
                         </button>
                     </div>
@@ -2441,18 +2441,19 @@
         </div>
     </div>
 
-    <!-- Multi-Item Purchase Invoice Modal -->
+    <!-- Multi-Item Purchase Invoice Modal (Supports Add & Edit) -->
     <div id="multiPurchaseModal" class="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-2 sm:p-4">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl p-4 sm:p-6 border flex flex-col max-h-[95vh]">
             <div class="flex justify-between items-center border-b pb-3 mb-3 shrink-0">
                 <div>
-                    <h3 class="text-lg sm:text-xl font-black text-emerald-700 flex items-center gap-2">📥 Record Purchase Bill (Multi-Item)</h3>
-                    <p class="text-[11px] text-zinc-500 font-semibold">एक साथ कई माल खरीदें • स्टॉक अपने आप जुड़ेगा • नया आइटम या सप्लायर यहीं से बनाएं</p>
+                    <h3 id="mpModalTitle" class="text-lg sm:text-xl font-black text-emerald-700 flex items-center gap-2">📥 Record Purchase Bill (Multi-Item)</h3>
+                    <p class="text-[11px] text-zinc-500 font-semibold">एक साथ कई माल खरीदें • परचेस बिल एडिट करें • स्टॉक अपने आप जुड़ेगा</p>
                 </div>
                 <button type="button" onclick="closeMultiPurchaseModal()" class="w-8 h-8 rounded-full bg-zinc-100 hover:bg-red-100 text-zinc-600 hover:text-red-600 font-black">✕</button>
             </div>
 
             <form onsubmit="submitMultiPurchase(event)" class="flex-1 flex flex-col overflow-hidden space-y-3">
+                <input type="hidden" id="mpEditOriginalInv" value="">
                 <!-- Top Bill & Supplier Info -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0 bg-zinc-50 p-3 rounded-2xl border">
                     <div>
@@ -2522,7 +2523,7 @@
                             <label class="block text-[10px] text-zinc-300 uppercase font-bold mb-0.5">Amount Paid Now (₹)</label>
                             <input type="number" id="mpAmountPaid" step="0.01" min="0" value="0" required class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-xl text-sm font-black text-white outline-none focus:border-yellow-400">
                         </div>
-                        <button type="submit" class="px-4 sm:px-5 py-3 bg-gradient-to-r from-emerald-400 to-teal-500 text-zinc-950 rounded-xl text-xs font-black shadow-lg hover:opacity-95 whitespace-nowrap mt-3">
+                        <button type="submit" id="mpSubmitBtn" class="px-4 sm:px-5 py-3 bg-gradient-to-r from-emerald-400 to-teal-500 text-zinc-950 rounded-xl text-xs font-black shadow-lg hover:opacity-95 whitespace-nowrap mt-3">
                             ✅ Save Purchase Bill
                         </button>
                     </div>
@@ -2531,9 +2532,43 @@
         </div>
     </div>
 
+    <!-- Purchase Receipt Viewer Modal (With Edit & Delete Buttons) -->
+    <div id="purchaseReceiptModal" class="fixed inset-0 bg-zinc-950/90 backdrop-blur-md z-[85] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg p-5 md:p-6 space-y-4 relative">
+            <div class="text-center border-b pb-4 bg-emerald-600 text-white -mx-5 -mt-5 p-4 rounded-t-3xl">
+                <h2 class="text-xl font-black">PURCHASE BILL DETAILS</h2>
+                <p class="text-xs font-bold opacity-90">A R FASHION - Inward Stock Bill</p>
+            </div>
+            <div class="text-xs space-y-1 font-semibold">
+                <p>Bill No: <span id="purRcptInvoice" class="font-black text-emerald-700"></span></p>
+                <p>Date: <span id="purRcptDate"></span></p>
+                <p>Supplier: <span id="purRcptSuppName" class="font-bold"></span></p>
+                <p>Phone: <span id="purRcptSuppPhone"></span></p>
+            </div>
+            <div class="border-y border-zinc-200 py-2">
+                <table class="w-full text-left">
+                    <thead><tr class="text-[9px] text-zinc-500 uppercase"><th class="pb-1">Item</th><th class="text-center">Qty</th><th class="text-right">Cost</th><th class="text-right">Total</th></tr></thead>
+                    <tbody id="purRcptItemsTable"></tbody>
+                </table>
+            </div>
+            <div class="text-xs space-y-1 text-right font-semibold">
+                <p>Total Purchase Bill: <span id="purRcptTotal" class="font-black"></span></p>
+                <p>Paid on Bill: <span id="purRcptPaid" class="text-emerald-600 font-bold"></span></p>
+                <p class="text-sm font-bold border-t pt-1">Supplier Total Payable Due: <span id="purRcptDue" class="text-red-600 font-black"></span></p>
+            </div>
+            <div class="flex flex-wrap justify-between items-center gap-2 pt-2">
+                <div class="flex gap-2">
+                    <button id="purRcptEditBtn" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow">✏️ Edit Bill</button>
+                    <button id="purRcptDelBtn" class="px-3.5 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl text-xs font-bold">🗑️ Delete</button>
+                </div>
+                <button onclick="document.getElementById('purchaseReceiptModal').classList.add('hidden'); toggleBodyScroll(false);" class="px-4 py-2 bg-zinc-900 text-white rounded-xl text-xs font-bold">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // =========================================================================
-        // 1. MULTI-ITEM SALES BILLING LOGIC (OPTIONAL EXTRA CHARGE & NEGATIVE STOCK)
+        // 1. MULTI-ITEM SALES BILLING (CREATE + EDIT + DELETE)
         // =========================================================================
         window.toggleMsExtraCharge = function(show) {
             var box = document.getElementById('msExtraChargeBox');
@@ -2542,16 +2577,18 @@
             if(show) {
                 box.classList.remove('hidden');
                 btn.classList.add('hidden');
-                amtInput.focus();
             } else {
                 box.classList.add('hidden');
                 btn.classList.remove('hidden');
                 amtInput.value = '';
-                calcMsTotals();
+                calcMsTotals(false);
             }
         };
 
         window.openSellModal = function(preselectedItemId) {
+            document.getElementById('msEditOriginalInv').value = '';
+            document.getElementById('msModalTitle').innerHTML = '🧾 Create Sales Invoice (Multi-Item)';
+            document.getElementById('msSubmitBtn').innerHTML = '✅ Save & Print Bill';
             document.getElementById('msInvoiceNo').value = 'INV-' + Math.floor(100000 + Math.random() * 900000);
             document.getElementById('msDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('msExtraLabel').value = 'Transport / भाड़ा';
@@ -2570,6 +2607,81 @@
             
             document.getElementById('multiSellModal').classList.remove('hidden');
             toggleBodyScroll(true);
+        };
+
+        // NEW: Open Sales Invoice in EDIT Mode
+        window.editSalesInvoice = function(invoiceNo) {
+            var invOrders = orders.filter(function(o) { return o.invoiceNo === invoiceNo; });
+            if(invOrders.length === 0) return alert("Invoice not found!");
+
+            closeReceiptModal();
+            closeHistoryModal();
+            document.getElementById('viewAllModal').classList.add('hidden');
+
+            var firstOrd = invOrders[0];
+            document.getElementById('msEditOriginalInv').value = invoiceNo;
+            document.getElementById('msModalTitle').innerHTML = '✏️ Edit Sales Invoice (' + invoiceNo + ')';
+            document.getElementById('msSubmitBtn').innerHTML = '💾 Update & Print Bill';
+            document.getElementById('msInvoiceNo').value = invoiceNo;
+            document.getElementById('msDate').value = firstOrd.date ? firstOrd.date.split('T')[0] : new Date().toISOString().split('T')[0];
+
+            var cs = document.getElementById('msCustomerSelect');
+            cs.innerHTML = '';
+            customers.forEach(function(c) {
+                cs.innerHTML += '<option value="' + c.id + '">' + c.name + ' (' + c.phone + ')</option>';
+            });
+            cs.innerHTML += '<option value="NEW_CUST">➕ Add New Customer...</option>';
+            cs.value = firstOrd.customerId;
+            checkMsNewCustomer();
+
+            document.getElementById('msItemsContainer').innerHTML = '';
+            toggleMsExtraCharge(false);
+
+            var totalPaidSoFar = 0;
+            invOrders.forEach(function(ord) {
+                totalPaidSoFar += (parseFloat(ord.amountPaid) || 0);
+                if(ord.itemId === 'EXTRA_CHARGE') {
+                    toggleMsExtraCharge(true);
+                    document.getElementById('msExtraLabel').value = ord.extraLabel || 'Transport / भाड़ा';
+                    document.getElementById('msExtraAmount').value = ord.totalAmount;
+                } else {
+                    var unitRate = ord.rate || (ord.totalAmount / (ord.quantity || 1));
+                    addMsItemRow(ord.itemId, ord.quantity, unitRate);
+                }
+            });
+
+            calcMsTotals(true);
+            document.getElementById('msAmountPaid').value = totalPaidSoFar.toFixed(2);
+            document.getElementById('multiSellModal').classList.remove('hidden');
+            toggleBodyScroll(true);
+        };
+
+        // NEW: Delete Sales Invoice Safely
+        window.deleteSalesInvoice = function(invoiceNo) {
+            if(!confirm("क्या आप वाकई बिल नंबर " + invoiceNo + " को डिलीट करना चाहते हैं? (स्टॉक और ग्राहक का बकाया हिसाब अपने आप वापस ठीक हो जाएगा)")) return;
+            var oldOrders = orders.filter(function(o) { return o.invoiceNo === invoiceNo; });
+            if(oldOrders.length === 0) return;
+
+            var oldCust = customers.find(function(c) { return c.id === oldOrders[0].customerId; });
+            var oldTotal = 0, oldPaid = 0;
+            oldOrders.forEach(function(ord) {
+                oldTotal += (parseFloat(ord.totalAmount) || 0);
+                oldPaid += (parseFloat(ord.amountPaid) || 0);
+                if(ord.itemId !== 'EXTRA_CHARGE') {
+                    var prod = inventory.find(function(i) { return i.id === ord.itemId; });
+                    if(prod) {
+                        prod.quantity = (prod.quantity || 0) + ord.quantity;
+                        prod.soldCount = Math.max(0, (prod.soldCount || 0) - ord.quantity);
+                    }
+                }
+            });
+            if(oldCust) {
+                oldCust.balanceDue = (oldCust.balanceDue || 0) - (oldTotal - oldPaid);
+            }
+            orders = orders.filter(function(o) { return o.invoiceNo !== invoiceNo; });
+            saveData();
+            closeReceiptModal();
+            closeHistoryModal();
         };
 
         window.closeMultiSellModal = function() {
@@ -2591,7 +2703,7 @@
             }
         };
 
-        window.addMsItemRow = function(selectedId) {
+        window.addMsItemRow = function(selectedId, customQty, customRate) {
             var container = document.getElementById('msItemsContainer');
             var row = document.createElement('div');
             row.className = "p-3 bg-zinc-50 rounded-2xl border border-zinc-200 space-y-2 ms-item-row";
@@ -2617,19 +2729,18 @@
                     </div>
                     <div class="w-20 sm:w-24">
                         <label class="block text-[9px] font-bold text-zinc-400 uppercase">Qty (Pcs) *</label>
-                        <input type="number" value="1" min="1" required oninput="calcMsTotals()" class="w-full px-2.5 py-2 bg-white border rounded-xl text-xs font-black text-center outline-none ms-item-qty">
+                        <input type="number" value="${customQty !== undefined ? customQty : 1}" min="1" required oninput="calcMsTotals(false)" class="w-full px-2.5 py-2 bg-white border rounded-xl text-xs font-black text-center outline-none ms-item-qty">
                     </div>
                     <div class="w-24 sm:w-28">
                         <label class="block text-[9px] font-bold text-blue-600 uppercase">Sale Rate (₹) *</label>
-                        <input type="number" step="0.01" value="0" required oninput="calcMsTotals()" class="w-full px-2.5 py-2 bg-blue-50 border border-blue-300 rounded-xl text-xs font-black text-blue-900 outline-none ms-item-rate">
+                        <input type="number" step="0.01" value="${customRate !== undefined ? customRate : 0}" required oninput="calcMsTotals(false)" class="w-full px-2.5 py-2 bg-blue-50 border border-blue-300 rounded-xl text-xs font-black text-blue-900 outline-none ms-item-rate">
                     </div>
                     <div class="w-24 sm:w-28 text-right">
                         <label class="block text-[9px] font-bold text-zinc-400 uppercase">Row Total</label>
                         <div class="py-2 px-1 text-xs font-black text-zinc-900 ms-row-total">₹0.00</div>
                     </div>
-                    <button type="button" onclick="if(document.querySelectorAll('.ms-item-row').length>1){this.closest('.ms-item-row').remove(); calcMsTotals();}" class="mt-4 px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-black">✕</button>
+                    <button type="button" onclick="if(document.querySelectorAll('.ms-item-row').length>1){this.closest('.ms-item-row').remove(); calcMsTotals(false);}" class="mt-4 px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-black">✕</button>
                 </div>
-                <!-- Inline New Item Fields -->
                 <div class="hidden grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2 border-t border-dashed border-amber-300 bg-amber-50/70 p-2 rounded-xl ms-new-item-box">
                     <input type="text" placeholder="New SKU (e.g. AR-105) *" class="px-2.5 py-1.5 bg-white border rounded-lg text-xs font-bold outline-none ms-new-sku">
                     <input type="text" placeholder="New Item Name *" class="px-2.5 py-1.5 bg-white border rounded-lg text-xs font-bold outline-none ms-new-name">
@@ -2649,10 +2760,10 @@
             } else if(!selectedId && inventory.length === 0) {
                 sel.value = 'ADD_NEW';
             }
-            onMsItemChange(sel);
+            onMsItemChange(sel, customRate !== undefined);
         };
 
-        window.onMsItemChange = function(selectEl) {
+        window.onMsItemChange = function(selectEl, keepCustomRate) {
             var row = selectEl.closest('.ms-item-row');
             var val = selectEl.value;
             var newBox = row.querySelector('.ms-new-item-box');
@@ -2665,26 +2776,22 @@
                 row.querySelector('.ms-new-name').required = true;
                 stkBadge.innerText = 'NEW (0)';
                 stkBadge.className = 'px-2.5 py-2 bg-amber-100 text-amber-800 rounded-xl text-xs font-black text-center ms-stock-badge';
-                rateInput.value = '';
+                if(!keepCustomRate) rateInput.value = '';
             } else {
                 newBox.classList.add('hidden');
                 row.querySelector('.ms-new-sku').required = false;
                 row.querySelector('.ms-new-name').required = false;
                 var item = inventory.find(function(i) { return i.id === val; });
                 if(item) {
-                    rateInput.value = item.price;
+                    if(!keepCustomRate) rateInput.value = item.price;
                     stkBadge.innerText = item.quantity + ' Pcs';
-                    if(item.quantity <= 0) {
-                        stkBadge.className = 'px-2.5 py-2 bg-red-100 text-red-700 rounded-xl text-xs font-black text-center ms-stock-badge';
-                    } else {
-                        stkBadge.className = 'px-2.5 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-xs font-black text-center ms-stock-badge';
-                    }
+                    stkBadge.className = item.quantity <= 0 ? 'px-2.5 py-2 bg-red-100 text-red-700 rounded-xl text-xs font-black text-center ms-stock-badge' : 'px-2.5 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-xs font-black text-center ms-stock-badge';
                 }
             }
-            calcMsTotals();
+            calcMsTotals(keepCustomRate);
         };
 
-        window.calcMsTotals = function() {
+        window.calcMsTotals = function(preservePaidAmount) {
             var rows = document.querySelectorAll('.ms-item-row');
             var totalQty = 0;
             var itemsTotal = 0;
@@ -2703,11 +2810,15 @@
             document.getElementById('msTotalQty').innerText = totalQty;
             document.getElementById('msGrandTotalDisplay').innerText = currencyFormatter.format(grandTotal);
             document.getElementById('msGrandTotal').value = grandTotal.toFixed(2);
-            document.getElementById('msAmountPaid').value = grandTotal.toFixed(2);
+            var isEditMode = !!document.getElementById('msEditOriginalInv').value;
+            if(!preservePaidAmount && !isEditMode) {
+                document.getElementById('msAmountPaid').value = grandTotal.toFixed(2);
+            }
         };
 
         window.submitMultiSale = function(e) {
             e.preventDefault();
+            var originalInvNo = document.getElementById('msEditOriginalInv').value;
             var invNo = document.getElementById('msInvoiceNo').value.trim();
             var invDateVal = document.getElementById('msDate').value;
             var isoDate = invDateVal ? new Date(invDateVal).toISOString() : new Date().toISOString();
@@ -2729,6 +2840,30 @@
 
             var rows = document.querySelectorAll('.ms-item-row');
             if(rows.length === 0) return alert("Add at least 1 item!");
+
+            // IF EDITING EXISTING INVOICE: Revert old stock & old customer balance first
+            if(originalInvNo) {
+                var oldOrders = orders.filter(function(o) { return o.invoiceNo === originalInvNo; });
+                if(oldOrders.length > 0) {
+                    var oldCust = customers.find(function(c) { return c.id === oldOrders[0].customerId; });
+                    var oldTotal = 0, oldPaid = 0;
+                    oldOrders.forEach(function(ord) {
+                        oldTotal += (parseFloat(ord.totalAmount) || 0);
+                        oldPaid += (parseFloat(ord.amountPaid) || 0);
+                        if(ord.itemId !== 'EXTRA_CHARGE') {
+                            var oldProd = inventory.find(function(i) { return i.id === ord.itemId; });
+                            if(oldProd) {
+                                oldProd.quantity = (oldProd.quantity || 0) + ord.quantity;
+                                oldProd.soldCount = Math.max(0, (oldProd.soldCount || 0) - ord.quantity);
+                            }
+                        }
+                    });
+                    if(oldCust) {
+                        oldCust.balanceDue = (oldCust.balanceDue || 0) - (oldTotal - oldPaid);
+                    }
+                    orders = orders.filter(function(o) { return o.invoiceNo !== originalInvNo; });
+                }
+            }
 
             var grandTotal = parseFloat(document.getElementById('msGrandTotal').value) || 0;
             var totalPaid = parseFloat(document.getElementById('msAmountPaid').value) || 0;
@@ -2804,7 +2939,7 @@
         };
 
         // =========================================================================
-        // 2. MULTI-ITEM PURCHASE BILLING LOGIC (WITH OPTIONAL EXTRA CHARGE)
+        // 2. MULTI-ITEM PURCHASE BILLING (CREATE + EDIT + DELETE)
         // =========================================================================
         window.toggleMpExtraCharge = function(show) {
             var box = document.getElementById('mpExtraChargeBox');
@@ -2813,7 +2948,6 @@
             if(show) {
                 box.classList.remove('hidden');
                 btn.classList.add('hidden');
-                amtInput.focus();
             } else {
                 box.classList.add('hidden');
                 btn.classList.remove('hidden');
@@ -2823,9 +2957,13 @@
         };
 
         window.openPurchaseModal = function(preselectedItemId) {
+            document.getElementById('mpEditOriginalInv').value = '';
+            document.getElementById('mpModalTitle').innerHTML = '📥 Record Purchase Bill (Multi-Item)';
+            document.getElementById('mpSubmitBtn').innerHTML = '✅ Save Purchase Bill';
             document.getElementById('mpInvoiceNo').value = 'BILL-' + Math.floor(100000 + Math.random() * 900000);
             document.getElementById('mpDate').value = new Date().toISOString().split('T')[0];
             document.getElementById('mpExtraLabel').value = 'Transport / भाड़ा';
+            document.getElementById('mpAmountPaid').value = '0';
             toggleMpExtraCharge(false);
             
             var ss = document.getElementById('mpSupplierSelect');
@@ -2841,6 +2979,122 @@
             
             document.getElementById('multiPurchaseModal').classList.remove('hidden');
             toggleBodyScroll(true);
+        };
+
+        // NEW: View Purchase Bill Receipt Popup
+        window.viewPurchaseReceipt = function(idOrBillNo) {
+            var p = purchases.find(function(x) { return x.id === idOrBillNo || x.invoiceNo === idOrBillNo; });
+            if(!p) return alert("Purchase bill not found!");
+            var sameBillPurchases = purchases.filter(function(x) { return x.invoiceNo === p.invoiceNo; });
+            var s = suppliers.find(function(x) { return x.id === p.supplierId; }) || {};
+
+            document.getElementById('purRcptInvoice').innerText = p.invoiceNo;
+            document.getElementById('purRcptDate').innerText = new Date(p.date).toLocaleDateString();
+            document.getElementById('purRcptSuppName').innerText = s.name || 'Supplier';
+            document.getElementById('purRcptSuppPhone').innerText = s.phone || '-';
+
+            var rowsHtml = '';
+            var billTotal = 0;
+            var billPaid = 0;
+
+            sameBillPurchases.forEach(function(pur) {
+                billTotal += (parseFloat(pur.totalAmount) || 0);
+                billPaid += (parseFloat(pur.amountPaid) || 0);
+                if(pur.itemId === 'EXTRA_CHARGE') {
+                    rowsHtml += '<tr class="border-b border-zinc-100 text-xs bg-amber-50/60"><td class="py-1.5 font-bold text-amber-900">+ ' + (pur.extraLabel || 'Extra Charges') + '</td><td class="py-1.5 text-center text-zinc-400">-</td><td class="py-1.5 text-right text-zinc-400">-</td><td class="py-1.5 text-right font-black text-amber-900">' + currencyFormatter.format(pur.totalAmount) + '</td></tr>';
+                } else {
+                    var item = inventory.find(function(x) { return x.id === pur.itemId; }) || { name: 'Item' };
+                    var unitCost = pur.costPrice || (pur.totalAmount / (pur.quantity || 1));
+                    rowsHtml += '<tr class="border-b border-zinc-100 text-xs"><td class="py-1.5 font-bold">' + item.name + '</td><td class="py-1.5 text-center font-bold">' + pur.quantity + '</td><td class="py-1.5 text-right">' + currencyFormatter.format(unitCost) + '</td><td class="py-1.5 text-right font-black">' + currencyFormatter.format(pur.totalAmount) + '</td></tr>';
+                }
+            });
+
+            document.getElementById('purRcptItemsTable').innerHTML = rowsHtml;
+            document.getElementById('purRcptTotal').innerText = currencyFormatter.format(billTotal);
+            document.getElementById('purRcptPaid').innerText = currencyFormatter.format(billPaid);
+            document.getElementById('purRcptDue').innerText = currencyFormatter.format(s.balanceDue || 0);
+
+            document.getElementById('purRcptEditBtn').onclick = function() { editPurchaseInvoice(p.invoiceNo); };
+            document.getElementById('purRcptDelBtn').onclick = function() { deletePurchaseInvoice(p.invoiceNo); };
+
+            document.getElementById('purchaseReceiptModal').classList.remove('hidden');
+            toggleBodyScroll(true);
+        };
+
+        // NEW: Open Purchase Bill in EDIT Mode
+        window.editPurchaseInvoice = function(billNo) {
+            var billPurchases = purchases.filter(function(p) { return p.invoiceNo === billNo; });
+            if(billPurchases.length === 0) return alert("Purchase Bill not found!");
+
+            document.getElementById('purchaseReceiptModal').classList.add('hidden');
+            closeHistoryModal();
+            document.getElementById('viewAllModal').classList.add('hidden');
+
+            var firstPur = billPurchases[0];
+            document.getElementById('mpEditOriginalInv').value = billNo;
+            document.getElementById('mpModalTitle').innerHTML = '✏️ Edit Purchase Bill (' + billNo + ')';
+            document.getElementById('mpSubmitBtn').innerHTML = '💾 Update Purchase Bill';
+            document.getElementById('mpInvoiceNo').value = billNo;
+            document.getElementById('mpDate').value = firstPur.date ? firstPur.date.split('T')[0] : new Date().toISOString().split('T')[0];
+
+            var ss = document.getElementById('mpSupplierSelect');
+            ss.innerHTML = '';
+            suppliers.forEach(function(s) {
+                ss.innerHTML += '<option value="' + s.id + '">' + s.name + ' (' + s.phone + ')</option>';
+            });
+            ss.innerHTML += '<option value="NEW_SUPP">➕ Add New Supplier...</option>';
+            ss.value = firstPur.supplierId;
+            checkMpNewSupplier();
+
+            document.getElementById('mpItemsContainer').innerHTML = '';
+            toggleMpExtraCharge(false);
+
+            var totalPaidSoFar = 0;
+            billPurchases.forEach(function(pur) {
+                totalPaidSoFar += (parseFloat(pur.amountPaid) || 0);
+                if(pur.itemId === 'EXTRA_CHARGE') {
+                    toggleMpExtraCharge(true);
+                    document.getElementById('mpExtraLabel').value = pur.extraLabel || 'Transport / भाड़ा';
+                    document.getElementById('mpExtraAmount').value = pur.totalAmount;
+                } else {
+                    var item = inventory.find(function(i) { return i.id === pur.itemId; });
+                    var unitCost = pur.costPrice || (pur.totalAmount / (pur.quantity || 1));
+                    var sellPrice = item ? item.price : unitCost;
+                    addMpItemRow(pur.itemId, pur.quantity, unitCost, sellPrice);
+                }
+            });
+
+            calcMpTotals();
+            document.getElementById('mpAmountPaid').value = totalPaidSoFar.toFixed(2);
+            document.getElementById('multiPurchaseModal').classList.remove('hidden');
+            toggleBodyScroll(true);
+        };
+
+        // NEW: Delete Purchase Bill Safely
+        window.deletePurchaseInvoice = function(billNo) {
+            if(!confirm("क्या आप वाकई परचेस बिल " + billNo + " को डिलीट करना चाहते हैं? (स्टॉक और सप्लायर का हिसाब अपने आप वापस ठीक हो जाएगा)")) return;
+            var oldPurchases = purchases.filter(function(p) { return p.invoiceNo === billNo; });
+            if(oldPurchases.length === 0) return;
+
+            var oldSupp = suppliers.find(function(s) { return s.id === oldPurchases[0].supplierId; });
+            var oldTotal = 0, oldPaid = 0;
+            oldPurchases.forEach(function(pur) {
+                oldTotal += (parseFloat(pur.totalAmount) || 0);
+                oldPaid += (parseFloat(pur.amountPaid) || 0);
+                if(pur.itemId !== 'EXTRA_CHARGE') {
+                    var prod = inventory.find(function(i) { return i.id === pur.itemId; });
+                    if(prod) {
+                        prod.quantity = (prod.quantity || 0) - pur.quantity;
+                    }
+                }
+            });
+            if(oldSupp) {
+                oldSupp.balanceDue = (oldSupp.balanceDue || 0) - (oldTotal - oldPaid);
+            }
+            purchases = purchases.filter(function(p) { return p.invoiceNo !== billNo; });
+            saveData();
+            document.getElementById('purchaseReceiptModal').classList.add('hidden');
+            closeHistoryModal();
         };
 
         window.closeMultiPurchaseModal = function() {
@@ -2862,7 +3116,7 @@
             }
         };
 
-        window.addMpItemRow = function(selectedId) {
+        window.addMpItemRow = function(selectedId, customQty, customCost, customSellPrice) {
             var container = document.getElementById('mpItemsContainer');
             var row = document.createElement('div');
             row.className = "p-3 bg-zinc-50 rounded-2xl border border-zinc-200 space-y-2 mp-item-row";
@@ -2883,15 +3137,15 @@
                     </div>
                     <div class="w-20 sm:w-24">
                         <label class="block text-[9px] font-bold text-zinc-400 uppercase">Buy Qty *</label>
-                        <input type="number" value="1" min="1" required oninput="calcMpTotals()" class="w-full px-2.5 py-2 bg-white border rounded-xl text-xs font-black text-center outline-none mp-item-qty">
+                        <input type="number" value="${customQty !== undefined ? customQty : 1}" min="1" required oninput="calcMpTotals()" class="w-full px-2.5 py-2 bg-white border rounded-xl text-xs font-black text-center outline-none mp-item-qty">
                     </div>
                     <div class="w-24 sm:w-28">
                         <label class="block text-[9px] font-bold text-emerald-700 uppercase">Buy Cost (₹) *</label>
-                        <input type="number" step="0.01" value="0" required oninput="calcMpTotals()" class="w-full px-2.5 py-2 bg-emerald-50 border border-emerald-300 rounded-xl text-xs font-black text-emerald-900 outline-none mp-item-cost">
+                        <input type="number" step="0.01" value="${customCost !== undefined ? customCost : 0}" required oninput="calcMpTotals()" class="w-full px-2.5 py-2 bg-emerald-50 border border-emerald-300 rounded-xl text-xs font-black text-emerald-900 outline-none mp-item-cost">
                     </div>
                     <div class="w-24 sm:w-28">
                         <label class="block text-[9px] font-bold text-purple-700 uppercase">Sell Price (₹)</label>
-                        <input type="number" step="0.01" value="0" required class="w-full px-2.5 py-2 bg-purple-50 border border-purple-300 rounded-xl text-xs font-black text-purple-900 outline-none mp-item-price">
+                        <input type="number" step="0.01" value="${customSellPrice !== undefined ? customSellPrice : 0}" required class="w-full px-2.5 py-2 bg-purple-50 border border-purple-300 rounded-xl text-xs font-black text-purple-900 outline-none mp-item-price">
                     </div>
                     <div class="w-24 sm:w-28 text-right">
                         <label class="block text-[9px] font-bold text-zinc-400 uppercase">Row Total</label>
@@ -2899,7 +3153,6 @@
                     </div>
                     <button type="button" onclick="if(document.querySelectorAll('.mp-item-row').length>1){this.closest('.mp-item-row').remove(); calcMpTotals();}" class="mt-4 px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-black">✕</button>
                 </div>
-                <!-- Inline New Item Fields -->
                 <div class="hidden grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-dashed border-emerald-300 bg-emerald-50/70 p-2 rounded-xl mp-new-item-box">
                     <input type="text" placeholder="New SKU (e.g. AR-201) *" class="px-2.5 py-1.5 bg-white border rounded-lg text-xs font-bold outline-none mp-new-sku">
                     <input type="text" placeholder="New Item Name *" class="px-2.5 py-1.5 bg-white border rounded-lg text-xs font-bold outline-none mp-new-name">
@@ -2918,10 +3171,10 @@
             } else if(!selectedId && inventory.length === 0) {
                 sel.value = 'ADD_NEW';
             }
-            onMpItemChange(sel);
+            onMpItemChange(sel, customCost !== undefined);
         };
 
-        window.onMpItemChange = function(selectEl) {
+        window.onMpItemChange = function(selectEl, keepCustomCost) {
             var row = selectEl.closest('.mp-item-row');
             var val = selectEl.value;
             var newBox = row.querySelector('.mp-new-item-box');
@@ -2932,14 +3185,13 @@
                 newBox.classList.remove('hidden');
                 row.querySelector('.mp-new-sku').required = true;
                 row.querySelector('.mp-new-name').required = true;
-                costInput.value = '';
-                priceInput.value = '';
+                if(!keepCustomCost) { costInput.value = ''; priceInput.value = ''; }
             } else {
                 newBox.classList.add('hidden');
                 row.querySelector('.mp-new-sku').required = false;
                 row.querySelector('.mp-new-name').required = false;
                 var item = inventory.find(function(i) { return i.id === val; });
-                if(item) {
+                if(item && !keepCustomCost) {
                     costInput.value = item.cost;
                     priceInput.value = item.price;
                 }
@@ -2970,6 +3222,7 @@
 
         window.submitMultiPurchase = function(e) {
             e.preventDefault();
+            var originalBillNo = document.getElementById('mpEditOriginalInv').value;
             var billNo = document.getElementById('mpInvoiceNo').value.trim();
             var purDateVal = document.getElementById('mpDate').value;
             var isoDate = purDateVal ? new Date(purDateVal).toISOString() : new Date().toISOString();
@@ -2991,6 +3244,29 @@
 
             var rows = document.querySelectorAll('.mp-item-row');
             if(rows.length === 0) return alert("Add at least 1 item!");
+
+            // IF EDITING EXISTING PURCHASE BILL: Revert old stock & supplier balance first
+            if(originalBillNo) {
+                var oldPurchases = purchases.filter(function(p) { return p.invoiceNo === originalBillNo; });
+                if(oldPurchases.length > 0) {
+                    var oldSupp = suppliers.find(function(s) { return s.id === oldPurchases[0].supplierId; });
+                    var oldTotal = 0, oldPaid = 0;
+                    oldPurchases.forEach(function(pur) {
+                        oldTotal += (parseFloat(pur.totalAmount) || 0);
+                        oldPaid += (parseFloat(pur.amountPaid) || 0);
+                        if(pur.itemId !== 'EXTRA_CHARGE') {
+                            var oldProd = inventory.find(function(i) { return i.id === pur.itemId; });
+                            if(oldProd) {
+                                oldProd.quantity = (oldProd.quantity || 0) - pur.quantity;
+                            }
+                        }
+                    });
+                    if(oldSupp) {
+                        oldSupp.balanceDue = (oldSupp.balanceDue || 0) - (oldTotal - oldPaid);
+                    }
+                    purchases = purchases.filter(function(p) { return p.invoiceNo !== originalBillNo; });
+                }
+            }
 
             var grandTotal = parseFloat(document.getElementById('mpGrandTotal').value) || 0;
             var totalPaid = parseFloat(document.getElementById('mpAmountPaid').value) || 0;
@@ -3059,15 +3335,15 @@
             suppObj.balanceDue = (suppObj.balanceDue || 0) + (grandTotal - totalPaid);
             saveData();
             closeMultiPurchaseModal();
-            alert("✅ परचेस बिल सफलतापूर्वक सेव हो गया!");
+            viewPurchaseReceipt(billNo);
         };
 
         // =========================================================================
-        // 3. UPGRADED MULTI-ITEM RECEIPT VIEWER
+        // 3. UPGRADED SALES RECEIPT VIEWER (WITH EDIT & DELETE BUTTONS)
         // =========================================================================
-        window.viewOrderReceipt = function(id) {
-            var o = orders.find(function(x) { return x.id === id; });
-            if(!o) return;
+        window.viewOrderReceipt = function(idOrInvNo) {
+            var o = orders.find(function(x) { return x.id === idOrInvNo || x.invoiceNo === idOrInvNo; });
+            if(!o) return alert("Sales Invoice not found!");
             var sameInvoiceOrders = orders.filter(function(x) { return x.invoiceNo === o.invoiceNo; });
             var c = customers.find(function(x) { return x.id === o.customerId; }) || {};
 
@@ -3082,8 +3358,8 @@
             var billPaid = 0;
 
             sameInvoiceOrders.forEach(function(ord) {
-                billTotal += ord.totalAmount;
-                billPaid += (ord.amountPaid || 0);
+                billTotal += (parseFloat(ord.totalAmount) || 0);
+                billPaid += (parseFloat(ord.amountPaid) || 0);
                 if(ord.itemId === 'EXTRA_CHARGE') {
                     rowsHtml += '<tr class="border-b border-zinc-100 text-xs bg-amber-50/60"><td class="py-1.5 font-bold text-amber-900">+ ' + (ord.extraLabel || 'Extra Charges') + '</td><td class="py-1.5 text-center font-bold text-zinc-400">-</td><td class="py-1.5 text-right text-zinc-400">-</td><td class="py-1.5 text-right font-black text-amber-900">' + currencyFormatter.format(ord.totalAmount) + '</td></tr>';
                 } else {
@@ -3097,7 +3373,118 @@
             document.getElementById('rcptTotal').innerText = currencyFormatter.format(billTotal);
             document.getElementById('rcptPaid').innerText = currencyFormatter.format(billPaid);
             document.getElementById('rcptDue').innerText = currencyFormatter.format(c.balanceDue || 0);
-            document.getElementById('receiptModal').classList.remove('hidden');
+
+            // Inject Edit & Delete Buttons into Receipt Modal Footer dynamically
+            var rcptModal = document.getElementById('receiptModal');
+            var btnContainer = rcptModal.querySelector('.print\\:hidden');
+            if(btnContainer) {
+                btnContainer.className = "flex flex-wrap justify-between items-center gap-2 pt-3 print:hidden";
+                btnContainer.innerHTML = `
+                    <div class="flex gap-2">
+                        <button type="button" onclick="editSalesInvoice('${o.invoiceNo}')" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow">✏️ Edit Bill</button>
+                        <button type="button" onclick="deleteSalesInvoice('${o.invoiceNo}')" class="px-3.5 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl text-xs font-bold">🗑️ Delete</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="window.print()" class="px-4 py-2 bg-zinc-900 text-white rounded-xl text-xs font-bold">🖨️ Print</button>
+                        <button type="button" onclick="closeReceiptModal()" class="px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold">Close</button>
+                    </div>
+                `;
+            }
+
+            rcptModal.classList.remove('hidden');
+            toggleBodyScroll(true);
+        };
+
+        // =========================================================================
+        // 4. INTERACTIVE CLICKABLE CUSTOMER & SUPPLIER LEDGER (WITH VIEW & EDIT)
+        // =========================================================================
+        window.viewHistory = function(id, t) {
+            var tb = document.getElementById('historyContent');
+            if(!tb) return;
+            tb.innerHTML = '';
+            var tr = [];
+
+            if(t === 'CUST') {
+                var c = customers.find(function(x) { return x.id === id; });
+                if(!c) return;
+                // Group multi-item sales by invoiceNo so each Invoice shows as 1 clean row in Ledger
+                var groupedOrders = {};
+                orders.filter(function(o) { return o.customerId === id; }).forEach(function(o) {
+                    if(!groupedOrders[o.invoiceNo]) {
+                        groupedOrders[o.invoiceNo] = { id: o.id, d: new Date(o.date), rf: o.invoiceNo, nt: 'Sales Invoice', amt: 0, pd: 0, qty: 0, kind: 'SALE' };
+                    }
+                    groupedOrders[o.invoiceNo].amt += (parseFloat(o.totalAmount) || 0);
+                    groupedOrders[o.invoiceNo].pd += (parseFloat(o.amountPaid) || 0);
+                    if(o.itemId !== 'EXTRA_CHARGE') groupedOrders[o.invoiceNo].qty += (parseInt(o.quantity) || 0);
+                });
+                Object.values(groupedOrders).forEach(function(go) { tr.push(go); });
+
+                payments.filter(function(p) { return p.customerId === id; }).forEach(function(p) {
+                    tr.push({ id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Payment Received', amt: 0, pd: parseFloat(p.amountPaid) || 0, qty: 0, kind: 'PAY_IN' });
+                });
+                document.getElementById('historyTitle').innerText = '📒 Customer Ledger: ' + c.name + ' (Due: ' + currencyFormatter.format(c.balanceDue || 0) + ')';
+            } else {
+                var s = suppliers.find(function(x) { return x.id === id; });
+                if(!s) return;
+                // Group multi-item purchases by invoiceNo
+                var groupedPurchases = {};
+                purchases.filter(function(p) { return p.supplierId === id; }).forEach(function(p) {
+                    if(!groupedPurchases[p.invoiceNo]) {
+                        groupedPurchases[p.invoiceNo] = { id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Purchase Bill', amt: 0, pd: 0, qty: 0, kind: 'PURCHASE' };
+                    }
+                    groupedPurchases[p.invoiceNo].amt += (parseFloat(p.totalAmount) || 0);
+                    groupedPurchases[p.invoiceNo].pd += (parseFloat(p.amountPaid) || 0);
+                    if(p.itemId !== 'EXTRA_CHARGE') groupedPurchases[p.invoiceNo].qty += (parseInt(p.quantity) || 0);
+                });
+                Object.values(groupedPurchases).forEach(function(gp) { tr.push(gp); });
+
+                supPayments.filter(function(p) { return p.supplierId === id; }).forEach(function(p) {
+                    tr.push({ id: p.id, d: new Date(p.date), rf: p.receiptNo, nt: 'Payment Given', amt: 0, pd: parseFloat(p.amountPaid) || 0, qty: 0, kind: 'PAY_OUT' });
+                });
+                document.getElementById('historyTitle').innerText = '📒 Supplier Ledger: ' + s.name + ' (Payable: ' + currencyFormatter.format(s.balanceDue || 0) + ')';
+            }
+
+            tr.sort(function(a, b) { return b.d - a.d; });
+
+            var h = '<div class="border rounded-2xl overflow-hidden"><table class="w-full text-left text-xs whitespace-nowrap"><thead class="bg-zinc-100 font-extrabold text-zinc-700"><tr><th class="p-2.5">Date</th><th class="p-2.5">Ref / Bill No (Click to Open)</th><th class="p-2.5">Type</th><th class="p-2.5 text-right">Bill Amt</th><th class="p-2.5 text-right">Paid</th><th class="p-2.5 text-center">Actions</th></tr></thead><tbody class="divide-y font-medium">';
+            if(tr.length === 0) {
+                h += '<tr><td colspan="6" class="p-6 text-center text-zinc-400 font-bold">No transactions recorded yet</td></tr>';
+            } else {
+                tr.forEach(function(x) {
+                    var refLink = '';
+                    var actionBtns = '';
+                    if(x.kind === 'SALE') {
+                        refLink = `<button type="button" onclick="viewOrderReceipt('${x.rf}')" class="text-blue-600 hover:text-blue-800 font-black underline flex items-center gap-1">🧾 ${x.rf}</button>`;
+                        actionBtns = `<button type="button" onclick="viewOrderReceipt('${x.rf}')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded font-bold">View</button>
+                                      <button type="button" onclick="editSalesInvoice('${x.rf}')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold">Edit</button>`;
+                    } else if(x.kind === 'PURCHASE') {
+                        refLink = `<button type="button" onclick="viewPurchaseReceipt('${x.rf}')" class="text-emerald-700 hover:text-emerald-900 font-black underline flex items-center gap-1">📥 ${x.rf}</button>`;
+                        actionBtns = `<button type="button" onclick="viewPurchaseReceipt('${x.rf}')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded font-bold">View</button>
+                                      <button type="button" onclick="editPurchaseInvoice('${x.rf}')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold">Edit</button>`;
+                    } else if(x.kind === 'PAY_IN') {
+                        refLink = `<button type="button" onclick="printGlobalPayment('${x.id}','IN')" class="text-amber-700 hover:text-amber-900 font-black underline flex items-center gap-1">💳 ${x.rf}</button>`;
+                        actionBtns = `<button type="button" onclick="printGlobalPayment('${x.id}','IN')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded font-bold">Receipt</button>
+                                      <button type="button" onclick="closeHistoryModal(); openGlobalPaymentModal('IN','${x.id}')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold">Edit</button>`;
+                    } else if(x.kind === 'PAY_OUT') {
+                        refLink = `<button type="button" onclick="printGlobalPayment('${x.id}','OUT')" class="text-purple-700 hover:text-purple-900 font-black underline flex items-center gap-1">💸 ${x.rf}</button>`;
+                        actionBtns = `<button type="button" onclick="printGlobalPayment('${x.id}','OUT')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded font-bold">Receipt</button>
+                                      <button type="button" onclick="closeHistoryModal(); openGlobalPaymentModal('OUT','${x.id}')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold">Edit</button>`;
+                    }
+
+                    var qtyBadge = x.qty > 0 ? ` <span class="text-[10px] bg-zinc-100 px-1.5 py-0.5 rounded font-bold text-zinc-600">(${x.qty} Pcs)</span>` : '';
+                    h += `<tr class="hover:bg-zinc-50">
+                        <td class="p-2.5 text-zinc-500">${x.d.toLocaleDateString()}</td>
+                        <td class="p-2.5">${refLink}</td>
+                        <td class="p-2.5 font-bold text-zinc-700">${x.nt}${qtyBadge}</td>
+                        <td class="p-2.5 text-right font-black text-zinc-900">${x.amt > 0 ? currencyFormatter.format(x.amt) : '-'}</td>
+                        <td class="p-2.5 text-right font-black text-emerald-600">${x.pd > 0 ? currencyFormatter.format(x.pd) : '-'}</td>
+                        <td class="p-2.5 text-center space-x-1">${actionBtns}</td>
+                    </tr>`;
+                });
+            }
+            h += '</tbody></table></div>';
+            tb.innerHTML = h;
+            document.getElementById('historyModal').classList.remove('hidden');
             toggleBodyScroll(true);
         };
     </script></body>
