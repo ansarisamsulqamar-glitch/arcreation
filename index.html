@@ -2295,13 +2295,45 @@
         }
         function closeHistoryModal() { document.getElementById('historyModal').classList.add('hidden'); toggleBodyScroll(false); }
 
-        // --- 13. INITIALIZATION & FIREBASE REALTIME SYNC ---
+       // --- 13. INITIALIZATION & FIREBASE REALTIME SYNC (WITH CLOUD OVERWRITE PROTECTION) ---
+        var isCloudReady = false;
+
+        // saveData को सुरक्षित किया गया ताकि क्लाउड लोड होने से पहले खाली (Zero) डेटा सेव न हो
+        window.saveData = function() {
+            localStorage.setItem('ar_inventory', JSON.stringify(inventory));
+            localStorage.setItem('ar_customers', JSON.stringify(customers));
+            localStorage.setItem('ar_suppliers', JSON.stringify(suppliers));
+            localStorage.setItem('ar_orders', JSON.stringify(orders));
+            localStorage.setItem('ar_purchases', JSON.stringify(purchases));
+            localStorage.setItem('ar_payments', JSON.stringify(payments));
+            localStorage.setItem('ar_sup_payments', JSON.stringify(supPayments));
+            localStorage.setItem('ar_expenses', JSON.stringify(expenses));
+            localStorage.setItem('ar_incomes', JSON.stringify(incomes));
+            localStorage.setItem('ar_documents', JSON.stringify(otherDocuments));
+            localStorage.setItem('ar_ready_categories', JSON.stringify(readyCategories));
+            localStorage.setItem('ar_raw_categories', JSON.stringify(rawCategories));
+            localStorage.setItem('ar_login_activity', JSON.stringify(loginActivity));
+            
+            if (db && isCloudReady) {
+                db.ref('ARFashionApp').set({
+                    inventory: inventory, customers: customers, suppliers: suppliers, 
+                    orders: orders, purchases: purchases, payments: payments, 
+                    supPayments: supPayments, expenses: expenses, incomes: incomes, 
+                    otherDocuments: otherDocuments, readyCategories: readyCategories, 
+                    rawCategories: rawCategories, loginActivity: loginActivity
+                }).catch(function(e) { console.warn("Cloud Sync Deferred", e); });
+            }
+
+            renderAll();
+        };
+        saveData = window.saveData;
+
         window.addEventListener('DOMContentLoaded', function() {
             loadLocalData();
             checkAuthOnLoad();
             
             if (isLoggedIn) {
-                recordLoginActivity();
+                renderAll();
                 switchTab('dashboard');
             }
 
@@ -2326,6 +2358,7 @@
                 var dbRef = db.ref('ARFashionApp');
                 dbRef.on('value', function(snapshot) {
                     var data = snapshot.val();
+                    isCloudReady = true; // क्लाउड डेटा आने के बाद ही सेव लॉक खुलेगा
                     if (data) {
                         inventory = data.inventory || []; customers = data.customers || [];
                         suppliers = data.suppliers || []; orders = data.orders || [];
@@ -2335,8 +2368,20 @@
                         loginActivity = data.loginActivity || [];
                         readyCategories = data.readyCategories || ["Kaftans", "Dresses", "Nightdresses", "Bottom Wear"];
                         rawCategories = data.rawCategories || ["Fabrics", "Embroidery Panels", "Threads", "Lace/Borders", "Accessories"];
-                    } else {
-                        migrateLocalToCloud();
+                        
+                        // फोन और कंप्यूटर की लोकल मेमोरी को भी अपडेट रखें
+                        localStorage.setItem('ar_inventory', JSON.stringify(inventory));
+                        localStorage.setItem('ar_customers', JSON.stringify(customers));
+                        localStorage.setItem('ar_suppliers', JSON.stringify(suppliers));
+                        localStorage.setItem('ar_orders', JSON.stringify(orders));
+                        localStorage.setItem('ar_purchases', JSON.stringify(purchases));
+                        localStorage.setItem('ar_payments', JSON.stringify(payments));
+                        localStorage.setItem('ar_sup_payments', JSON.stringify(supPayments));
+                        localStorage.setItem('ar_expenses', JSON.stringify(expenses));
+                        localStorage.setItem('ar_incomes', JSON.stringify(incomes));
+                        localStorage.setItem('ar_documents', JSON.stringify(otherDocuments));
+                    } else if (inventory.length > 0 || customers.length > 0) {
+                        saveData();
                     }
                     if (isLoggedIn) renderAll();
                 }, function(error) {
@@ -2346,6 +2391,7 @@
                 });
             }
         });
+    </script>
     </script><!-- ========================================================================================= -->
     <!-- UPGRADED MULTI-ITEM BILLING ENGINE WITH FULL EDIT, DELETE & CLICKABLE LEDGER SUPPORT -->
     <!-- ========================================================================================= -->
