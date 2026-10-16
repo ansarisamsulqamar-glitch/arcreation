@@ -1569,7 +1569,8 @@
             }
 
             var sPMap = {}; 
-            orders.forEach(function(o) { 
+           orders.forEach(function(o) { 
+                if(o.itemId === 'EXTRA_CHARGE') return; // यह लाइन जोड़ दें
                 if(!sPMap[o.itemId]) sPMap[o.itemId] = {q:0, r:0}; 
                 sPMap[o.itemId].q += o.quantity; sPMap[o.itemId].r += o.totalAmount; 
             });
@@ -1607,8 +1608,9 @@
                 if(pn === 0) pOut.innerHTML = '<tr><td colspan="2" class="p-2 text-center text-zinc-400">No dues</td></tr>'; 
             }
 
-            var pPMap = {}; 
+            var pPMap = {};
             purchases.forEach(function(p) { 
+                if(p.itemId === 'EXTRA_CHARGE') return; // यह लाइन यहाँ भी जोड़ दें
                 if(!pPMap[p.itemId]) pPMap[p.itemId] = {q:0, c:0}; 
                 pPMap[p.itemId].q += p.quantity; pPMap[p.itemId].c += p.totalAmount; 
             });
