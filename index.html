@@ -946,7 +946,7 @@
             localStorage.setItem('ar_raw_categories', JSON.stringify(rawCategories));
             localStorage.setItem('ar_login_activity', JSON.stringify(loginActivity));
             
-            if (db) {
+           if (db && isCloudReady) {
                 db.ref('ARFashionApp').set({
                     inventory: inventory, customers: customers, suppliers: suppliers, 
                     orders: orders, purchases: purchases, payments: payments, 
