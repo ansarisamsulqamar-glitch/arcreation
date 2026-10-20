@@ -393,7 +393,10 @@
                 <div class="bg-white rounded-2xl shadow-sm border p-4 md:p-6 space-y-4">
                     <div class="flex justify-between items-center">
                         <h3 class="text-lg font-extrabold">Supplier Ledger</h3>
-                        <button onclick="openSupplierModal()" class="bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs font-bold shadow">+ Add Supplier</button>
+                        <div class="flex gap-2">
+                            <button onclick="openBulkPurchaseModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow">📂 Bulk Purchase CSV</button>
+                            <button onclick="openSupplierModal()" class="bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs font-bold shadow">+ Add Supplier</button>
+                        </div>
                     </div>
                     <div class="table-container overflow-x-auto w-full">
                         <table class="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
@@ -1743,7 +1746,7 @@
                 var tp = (parseInt(c.openingPieces)||0) + o.reduce(function(s,x) { return s+x.quantity; }, 0); 
                 var pu = (parseFloat(c.openingTotalPurchase)||0) + o.reduce(function(s,x) { return s+x.totalAmount; }, 0); 
                 var d = c.balanceDue||0; var p = pu-d; 
-                tb.innerHTML += '<tr class="hover:bg-zinc-50 border-b border-zinc-100"><td class="p-2 font-bold">'+c.name+'</td><td class="p-2"><a href="'+getWaLink(c.phone)+'" target="_blank" class="text-emerald-600 font-bold">💬 '+c.phone+'</a></td><td class="p-2 text-right font-black text-amber-600">'+tp+' Pcs</td><td class="p-2 text-right font-bold text-zinc-900">'+currencyFormatter.format(pu)+'</td><td class="p-2 text-right font-bold text-emerald-600">'+currencyFormatter.format(p>0?p:0)+'</td><td class="p-2 text-right text-red-600 font-black">'+currencyFormatter.format(d)+'</td><td class="p-2 text-center"><button onclick="viewHistory(\''+c.id+'\',\'CUST\')" class="px-3 py-1.5 bg-zinc-800 text-white rounded-xl text-xs font-bold shadow">Ledger</button></td></tr>';
+                tb.innerHTML += '<tr class="hover:bg-zinc-50 border-b border-zinc-100"><td class="p-2 font-bold">'+c.name+'</td><td class="p-2"><a href="'+getWaLink(c.phone)+'" target="_blank" class="text-emerald-600 font-bold">💬 '+c.phone+'</a></td><td class="p-2 text-right font-black text-amber-600">'+tp+' Pcs</td><td class="p-2 text-right font-bold text-zinc-900">'+currencyFormatter.format(pu)+'</td><td class="p-2 text-right font-bold text-emerald-600">'+currencyFormatter.format(p>0?p:0)+'</td><td class="p-2 text-right text-red-600 font-black">'+currencyFormatter.format(d)+'</td><td class="p-2 text-center"><button onclick="viewHistory(\''+c.id+'\',\'CUST\')" class="px-3 py-1.5 bg-zinc-800 text-white rounded-xl text-xs font-bold shadow">Ledger</button><button type="button" onclick="openEditPartyModal('${c.id}', 'CUST')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded text-[10px] font-bold">Edit</button></td></tr>';
             });
         }
 
@@ -1755,7 +1758,7 @@
                 var tp = p.reduce(function(su,x) { return su+x.quantity; }, 0); 
                 var tv = (parseFloat(s.openingBalance)||0) + p.reduce(function(su,x) { return su+x.totalAmount; }, 0); 
                 var d = s.balanceDue||0; var pd = tv-d; 
-                tb.innerHTML += '<tr class="hover:bg-zinc-50 border-b border-zinc-100"><td class="p-2 font-bold">'+s.name+'</td><td class="p-2"><a href="'+getWaLink(s.phone)+'" target="_blank" class="text-emerald-600 font-bold">💬 '+s.phone+'</a></td><td class="p-2 text-right font-black text-amber-600">'+tp+' Pcs</td><td class="p-2 text-right font-bold text-zinc-900">'+currencyFormatter.format(tv)+'</td><td class="p-2 text-right font-bold text-emerald-600">'+currencyFormatter.format(pd>0?pd:0)+'</td><td class="p-2 text-right text-red-600 font-black">'+currencyFormatter.format(d)+'</td><td class="p-2 text-center"><button onclick="viewHistory(\''+s.id+'\',\'SUPP\')" class="px-3 py-1.5 bg-zinc-800 text-white rounded-xl text-xs font-bold shadow">Ledger</button></td></tr>';
+                tb.innerHTML += '<tr class="hover:bg-zinc-50 border-b border-zinc-100"><td class="p-2 font-bold">'+s.name+'</td><td class="p-2"><a href="'+getWaLink(s.phone)+'" target="_blank" class="text-emerald-600 font-bold">💬 '+s.phone+'</a></td><td class="p-2 text-right font-black text-amber-600">'+tp+' Pcs</td><td class="p-2 text-right font-bold text-zinc-900">'+currencyFormatter.format(tv)+'</td><td class="p-2 text-right font-bold text-emerald-600">'+currencyFormatter.format(pd>0?pd:0)+'</td><td class="p-2 text-right text-red-600 font-black">'+currencyFormatter.format(d)+'</td><td class="p-2 text-center"><button onclick="viewHistory(\''+s.id+'\',\'SUPP\')" class="px-3 py-1.5 bg-zinc-800 text-white rounded-xl text-xs font-bold shadow">Ledger</button><button type="button" onclick="openEditPartyModal('${s.id}', 'SUPP')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded text-[10px] font-bold">Edit</button></td></tr>';
             });
         }
 
@@ -3532,5 +3535,272 @@
             document.getElementById('historyModal').classList.remove('hidden');
             toggleBodyScroll(true);
         };
-    </script></body>
+        <!-- Bulk Purchase CSV Import Modal -->
+<div id="bulkPurchaseModal" class="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-50 hidden flex items-end md:items-center justify-center p-0 md:p-4">
+    <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl w-full max-w-lg p-6 border max-h-[90vh] overflow-y-auto">
+        <h3 class="text-xl font-extrabold mb-2 text-emerald-700">📥 Bulk Import Purchase Bills (मल्टी-प्रोडक्ट + भाड़ा)</h3>
+        <p class="text-xs text-zinc-500 font-medium mb-3">एक ही बिल में कई प्रोडक्ट्स और भाड़ा (Extra Charge) CSV के जरिए अपलोड करें।</p>
+        
+        <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl mb-4 text-[11px] text-emerald-900 space-y-1">
+            <p class="font-bold">CSV Format:</p>
+            <code class="block bg-white p-2 rounded border border-emerald-300 font-mono text-[10px] select-all">bill_no,date,supplier_name,supplier_phone,item_sku,item_name,nature,category,quantity,buy_cost,sell_price,amount_paid,extra_charge</code>
+        </div>
+
+        <input type="file" id="csvPurchaseFileInput" accept=".csv" class="mb-4 w-full text-sm text-zinc-500">
+        
+        <div class="flex justify-between items-center gap-3 pt-2">
+            <button type="button" onclick="downloadPurchaseCSVTemplate()" class="text-xs text-blue-600 font-bold hover:underline">📥 Download Template</button>
+            <div class="flex gap-2">
+                <button type="button" onclick="closeBulkPurchaseModal()" class="px-4 py-2 bg-zinc-100 rounded-xl text-xs font-bold">Cancel</button>
+                <button type="button" onclick="processPurchaseCSVImport()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold shadow">Upload & Process</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Customer / Supplier Modal -->
+<div id="editPartyModal" class="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 border">
+        <h3 class="text-xl font-extrabold mb-2 text-zinc-900" id="editPartyTitle">✏️ Edit Party Details</h3>
+        <p class="text-xs text-zinc-500 mb-4">सप्लायर या कस्टमर का नाम, फोन नंबर या पता अपडेट करें।</p>
+        
+        <input type="hidden" id="editPartyId">
+        <input type="hidden" id="editPartyType">
+        
+        <div class="space-y-3">
+            <div>
+                <label class="block text-xs font-bold text-zinc-700 mb-1">Name *</label>
+                <input type="text" id="editPartyName" class="w-full border rounded-xl px-3 py-2 text-sm font-semibold outline-none focus:ring-2 focus:ring-yellow-400">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-zinc-700 mb-1">Phone Number *</label>
+                <input type="text" id="editPartyPhone" class="w-full border rounded-xl px-3 py-2 text-sm font-semibold outline-none focus:ring-2 focus:ring-yellow-400">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-zinc-700 mb-1">Address / Region</label>
+                <input type="text" id="editPartyAddress" class="w-full border rounded-xl px-3 py-2 text-sm font-semibold outline-none focus:ring-2 focus:ring-yellow-400">
+            </div>
+        </div>
+        
+        <div class="flex justify-end gap-2 mt-6">
+            <button type="button" onclick="closeEditPartyModal()" class="px-4 py-2 bg-zinc-100 rounded-xl text-xs font-bold">Cancel</button>
+            <button type="button" onclick="savePartyEdit()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- BULK PURCHASE CSV IMPORT LOGIC ---
+    window.openBulkPurchaseModal = function() {
+        var f = document.getElementById('csvPurchaseFileInput'); if(f) f.value = '';
+        var m = document.getElementById('bulkPurchaseModal'); if(m) m.classList.remove('hidden');
+        if(typeof toggleBodyScroll === 'function') toggleBodyScroll(true);
+    };
+
+    window.closeBulkPurchaseModal = function() {
+        var m = document.getElementById('bulkPurchaseModal'); if(m) m.classList.add('hidden');
+        if(typeof toggleBodyScroll === 'function') toggleBodyScroll(false);
+    };
+
+    window.downloadPurchaseCSVTemplate = function() {
+        var csvContent = "bill_no,date,supplier_name,supplier_phone,item_sku,item_name,nature,category,quantity,buy_cost,sell_price,amount_paid,extra_charge\n" +
+                         "BILL-001,2026-10-20,Al-Madina Fabrics,9876543210,FAB-01,Rayon Fabric,Raw Material,Fabrics,100,120,200,5000,200\n" +
+                         "BILL-002,2026-10-20,Zoya Apparels,9123456789,KAF-01,Designer Kaftan,Ready Stock,Kaftans,50,350,650,10000,150\n" +
+                         "BILL-002,2026-10-20,Zoya Apparels,9123456789,KAF-02,Cotton Kaftan,Ready Stock,Kaftans,30,300,600,0,0";
+        
+        var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "purchase_bills_multiproduct_template.csv";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
+    window.processPurchaseCSVImport = function() {
+        var fileInput = document.getElementById('csvPurchaseFileInput');
+        if(!fileInput || !fileInput.files[0]) return alert('कृपया पहले CSV फाइल चुनें!');
+        
+        var file = fileInput.files[0];
+        var reader = new FileReader();
+        
+        reader.onload = function(e) {
+            var lines = e.target.result.split('\n');
+            var importedBillsCount = 0;
+            var billGroups = {};
+            
+            for(var i = 1; i < lines.length; i++) {
+                var row = lines[i].trim();
+                if(!row) continue;
+                
+                var cols = row.split(',');
+                if(cols.length >= 11) {
+                    var billNo = cols[0].trim();
+                    if(!billGroups[billNo]) {
+                        billGroups[billNo] = {
+                            billNo: billNo,
+                            date: cols[1].trim() ? new Date(cols[1].trim()).toISOString() : new Date().toISOString(),
+                            supName: cols[2].trim(),
+                            supPhone: cols[3].trim() || '0000000000',
+                            amountPaid: parseFloat(cols[11]) || 0,
+                            extraCharge: cols[12] ? (parseFloat(cols[12]) || 0) : 0,
+                            items: []
+                        };
+                    }
+                    billGroups[billNo].items.push({
+                        sku: cols[4].trim(),
+                        itemName: cols[5].trim(),
+                        nature: cols[6].trim() || 'Raw Material',
+                        category: cols[7].trim() || 'Fabrics',
+                        qty: parseFloat(cols[8]) || 0,
+                        buyCost: parseFloat(cols[9]) || 0,
+                        sellPrice: parseFloat(cols[10]) || parseFloat(cols[9]) || 0
+                    });
+                }
+            }
+            
+            Object.values(billGroups).forEach(function(bill) {
+                var supObj = suppliers.find(function(s) { return s.name.toLowerCase() === bill.supName.toLowerCase(); });
+                if(!supObj) {
+                    supObj = {
+                        id: '_' + Math.random().toString(36).substr(2, 9),
+                        name: bill.supName,
+                        phone: bill.supPhone,
+                        address: 'LOCAL',
+                        openingBalance: 0,
+                        balanceDue: 0
+                    };
+                    suppliers.push(supObj);
+                }
+                
+                var currentBillItemsTotal = 0;
+                
+                bill.items.forEach(function(it) {
+                    if(it.sku && it.itemName && it.qty > 0) {
+                        var prodObj = inventory.find(function(item) { return item.sku.toLowerCase() === it.sku.toLowerCase(); });
+                        if(!prodObj) {
+                            prodObj = {
+                                id: '_' + Math.random().toString(36).substr(2, 9),
+                                image: '',
+                                nature: it.nature,
+                                sku: it.sku,
+                                name: it.itemName,
+                                category: it.category,
+                                quantity: 0,
+                                cost: it.buyCost,
+                                price: it.sellPrice,
+                                soldCount: 0
+                            };
+                            inventory.push(prodObj);
+                            if(it.nature === 'Raw Material') { if(typeof rawCategories !== 'undefined' && !rawCategories.includes(it.category)) rawCategories.push(it.category); }
+                            else { if(typeof readyCategories !== 'undefined' && !readyCategories.includes(it.category)) readyCategories.push(it.category); }
+                        } else {
+                            prodObj.quantity += it.qty;
+                            prodObj.cost = it.buyCost;
+                            prodObj.price = it.sellPrice;
+                        }
+                        
+                        var rowTotal = it.qty * it.buyCost;
+                        currentBillItemsTotal += rowTotal;
+                        
+                        purchases.push({
+                            id: '_' + Math.random().toString(36).substr(2, 9),
+                            invoiceNo: bill.billNo,
+                            supplierId: supObj.id,
+                            itemId: prodObj.id,
+                            quantity: it.qty,
+                            costPrice: it.buyCost,
+                            totalAmount: rowTotal,
+                            amountPaid: 0,
+                            date: bill.date
+                        });
+                    }
+                });
+                
+                var grandBillTotal = currentBillItemsTotal + bill.extraCharge;
+                
+                if(bill.extraCharge > 0) {
+                    purchases.push({
+                        id: '_' + Math.random().toString(36).substr(2, 9),
+                        invoiceNo: bill.billNo,
+                        supplierId: supObj.id,
+                        itemId: 'EXTRA_CHARGE',
+                        extraLabel: 'Transport / भाड़ा',
+                        quantity: 0,
+                        costPrice: bill.extraCharge,
+                        totalAmount: bill.extraCharge,
+                        amountPaid: 0,
+                        date: bill.date
+                    });
+                }
+                
+                if(bill.amountPaid > 0) {
+                    var firstPur = purchases.find(function(p) { return p.invoiceNo === bill.billNo; });
+                    if(firstPur) firstPur.amountPaid = bill.amountPaid;
+                }
+                
+                supObj.balanceDue = (supObj.balanceDue || 0) + (grandBillTotal - bill.amountPaid);
+                importedBillsCount++;
+            });
+            
+            if(typeof saveData === 'function') saveData();
+            closeBulkPurchaseModal();
+            alert('सफलतापूर्वक ' + importedBillsCount + ' परचेस बिल इम्पोर्ट हो गए हैं!');
+        };
+        reader.readAsText(file);
+    };
+
+    // --- EDIT PARTY DETAILS LOGIC ---
+    window.openEditPartyModal = function(id, type) {
+        var party = null;
+        if(type === 'CUST') {
+            party = customers.find(function(c) { return c.id === id; });
+            document.getElementById('editPartyTitle').innerText = '✏️ Edit Customer Details';
+        } else {
+            party = suppliers.find(function(s) { return s.id === id; });
+            document.getElementById('editPartyTitle').innerText = '✏️ Edit Supplier Details';
+        }
+        if(!party) return alert('पार्टी नहीं मिली!');
+
+        document.getElementById('editPartyId').value = party.id;
+        document.getElementById('editPartyType').value = type;
+        document.getElementById('editPartyName').value = party.name || '';
+        document.getElementById('editPartyPhone').value = party.phone || '';
+        document.getElementById('editPartyAddress').value = party.address || '';
+
+        var m = document.getElementById('editPartyModal');
+        if(m) m.classList.remove('hidden');
+        if(typeof toggleBodyScroll === 'function') toggleBodyScroll(true);
+    };
+
+    window.closeEditPartyModal = function() {
+        var m = document.getElementById('editPartyModal');
+        if(m) m.classList.add('hidden');
+        if(typeof toggleBodyScroll === 'function') toggleBodyScroll(false);
+    };
+
+    window.savePartyEdit = function() {
+        var id = document.getElementById('editPartyId').value;
+        var type = document.getElementById('editPartyType').value;
+        var name = document.getElementById('editPartyName').value.trim();
+        var phone = document.getElementById('editPartyPhone').value.trim();
+        var address = document.getElementById('editPartyAddress').value.trim();
+
+        if(!name || !phone) return alert('नाम और फोन नंबर भरना अनिवार्य है!');
+
+        if(type === 'CUST') {
+            var c = customers.find(function(x) { return x.id === id; });
+            if(c) { c.name = name; c.phone = phone; c.address = address; }
+        } else {
+            var s = suppliers.find(function(x) { return x.id === id; });
+            if(s) { s.name = name; s.phone = phone; s.address = address; }
+        }
+
+        if(typeof saveData === 'function') saveData();
+        closeEditPartyModal();
+        alert('डिटेल सफलतापूर्वक अपडेट हो गई है!');
+    };
+</script>
+</body>
 </html>
