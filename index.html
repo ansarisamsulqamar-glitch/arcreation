@@ -391,26 +391,15 @@
             <!-- TAB 3: SUPPLIERS -->
             <div id="tabSuppliers" class="space-y-6 hidden">
                 <div class="bg-white rounded-2xl shadow-sm border p-4 md:p-6 space-y-4">
-                    <div class="flex flex-wrap justify-between items-center gap-2">
+                    <div class="flex justify-between items-center">
                         <h3 class="text-lg font-extrabold">Supplier Ledger</h3>
-                        <div class="flex flex-wrap gap-2">
-                            <button onclick="openBulkPurchaseModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow">📂 Bulk Purchase CSV</button>
-                            <button onclick="openSupplierModal()" class="bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs font-bold shadow">+ Add Supplier</button>
-                        </div>
+                        <button onclick="openSupplierModal()" class="bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs font-bold shadow">+ Add Supplier</button>
                     </div>
                     <div class="table-container overflow-x-auto w-full">
                         <table class="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
-                          <thead class="bg-zinc-100 text-[10px] uppercase font-extrabold border-y">
-        <tr>
-            <th class="p-3">Name</th>
-            <th class="p-3">Phone</th>
-            <th class="p-3 text-right">Total Qty</th>
-            <th class="p-3 text-right">Total value</th>
-            <th class="p-3 text-right">Paid</th>
-            <th class="p-3 text-right">Payable Due</th>
-            <th class="p-3 text-center">Action</th>
-        </tr>
-    </thead>
+                            <thead class="bg-zinc-100 text-[10px] uppercase font-extrabold border-y">
+                                <tr><th class="p-3">Name</th><th class="p-3">Phone</th><th class="p-3 text-right">Total Pcs</th><th class="p-3 text-right">Total Value</th><th class="p-3 text-right">Paid</th><th class="p-3 text-right">Payable Due</th><th class="p-3 text-center">Action</th></tr>
+                            </thead>
                             <tbody id="supplierTableBody" class="divide-y text-xs font-medium"></tbody>
                         </table>
                     </div>
@@ -558,36 +547,6 @@
     <!-- ========================================================================================= -->
     <!-- ALL MODALS -->
     <!-- ========================================================================================= -->
-    
-    <!-- Edit Supplier Modal -->
-    <div id="editSupplierModal" class="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 border">
-            <h3 class="text-xl font-extrabold mb-2 text-zinc-900">✏️ Edit Supplier Details</h3>
-            <p class="text-xs text-zinc-500 mb-4">सप्लायर का नाम, फोन नंबर या पता अपडेट करें।</p>
-            
-            <input type="hidden" id="editSupId">
-            
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-xs font-bold text-zinc-700 mb-1">Supplier Name</label>
-                    <input type="text" id="editSupName" class="w-full border rounded-xl px-3 py-2 text-sm font-semibold focus:outline-emerald-600">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-zinc-700 mb-1">Phone Number</label>
-                    <input type="text" id="editSupPhone" class="w-full border rounded-xl px-3 py-2 text-sm font-semibold focus:outline-emerald-600">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-zinc-700 mb-1">Address / Notes</label>
-                    <input type="text" id="editSupAddress" class="w-full border rounded-xl px-3 py-2 text-sm font-semibold focus:outline-emerald-600">
-                </div>
-            </div>
-            
-            <div class="flex justify-end gap-2 mt-6">
-                <button type="button" onclick="closeEditSupplierModal()" class="px-4 py-2 bg-zinc-100 rounded-xl text-xs font-bold">Cancel</button>
-                <button type="button" onclick="saveSupplierEdit()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow">Save Changes</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Change Password Modal -->
     <div id="changePasswordModal" class="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-[10001] hidden flex items-center justify-center p-4">
@@ -987,7 +946,7 @@
             localStorage.setItem('ar_raw_categories', JSON.stringify(rawCategories));
             localStorage.setItem('ar_login_activity', JSON.stringify(loginActivity));
             
-           if (db && isCloudReady) {
+            if (db) {
                 db.ref('ARFashionApp').set({
                     inventory: inventory, customers: customers, suppliers: suppliers, 
                     orders: orders, purchases: purchases, payments: payments, 
@@ -1573,16 +1532,15 @@
             renderInventoryTable(res); 
         }
 
-       function renderInventoryTable(data) {
+        function renderInventoryTable(data) {
             var tbody = document.getElementById('inventoryTableBody'); if(!tbody) return; tbody.innerHTML = '';
             if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-zinc-400 font-semibold">No items found.</td></tr>'; return; }
             data.forEach(function(item) {
                 var safeName = (item.name || '').replace(/'/g, "\\'");
                 var imgTag = item.image ? '<img src="'+item.image+'" class="w-10 h-10 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity shadow-sm" onclick="openImageZoom(\''+item.image+'\', \''+safeName+'\')">' : '<span class="text-[10px] text-zinc-400 bg-zinc-100 px-2 py-1 rounded">No Photo</span>';
                 var natureBadge = item.nature === 'Raw Material' ? '<span class="px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded text-[9px] font-black uppercase inline-block mt-1">Raw Mat.</span>' : '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded text-[9px] font-black uppercase inline-block mt-1">Ready</span>';
-                var unitLabel = (item.nature === 'Raw Material') ? ' Mtrs' : ' Pcs';
                 var qtyColor = item.quantity < 10 ? 'text-red-600' : 'text-emerald-600';
-                tbody.innerHTML += '<tr class="hover:bg-zinc-50/80 transition-colors border-b border-zinc-50"><td class="p-2">'+imgTag+'</td><td class="p-2 font-bold text-zinc-900">'+item.sku+'</td><td class="p-2 text-zinc-900 font-bold whitespace-normal min-w-[120px] leading-tight">'+item.name+' <br> '+natureBadge+'</td><td class="p-2 font-bold text-zinc-600">'+item.category+'</td><td class="p-2 text-right font-semibold">'+currencyFormatter.format(item.cost)+'</td><td class="p-2 text-right font-extrabold text-red-600">'+currencyFormatter.format(item.price)+'</td><td class="p-2 text-right font-black '+qtyColor+'">'+item.quantity + unitLabel+'</td><td class="p-2 text-center space-x-1 whitespace-nowrap"><button onclick="openPurchaseModal(\''+item.id+'\')" class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">Buy</button><button onclick="openSellModal(\''+item.id+'\')" class="px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold">Sell</button><button onclick="editProduct(\''+item.id+'\')" class="px-2 py-1 bg-zinc-200 text-zinc-700 rounded text-[10px] font-bold">Edit</button></td></tr>';
+                tbody.innerHTML += '<tr class="hover:bg-zinc-50/80 transition-colors border-b border-zinc-50"><td class="p-2">'+imgTag+'</td><td class="p-2 font-bold text-zinc-900">'+item.sku+'</td><td class="p-2 text-zinc-900 font-bold whitespace-normal min-w-[120px] leading-tight">'+item.name+' <br> '+natureBadge+'</td><td class="p-2 font-bold text-zinc-600">'+item.category+'</td><td class="p-2 text-right font-semibold">'+currencyFormatter.format(item.cost)+'</td><td class="p-2 text-right font-extrabold text-red-600">'+currencyFormatter.format(item.price)+'</td><td class="p-2 text-right font-black '+qtyColor+'">'+item.quantity+'</td><td class="p-2 text-center space-x-1 whitespace-nowrap"><button onclick="openPurchaseModal(\''+item.id+'\')" class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">Buy</button><button onclick="openSellModal(\''+item.id+'\')" class="px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold">Sell</button><button onclick="editProduct(\''+item.id+'\')" class="px-2 py-1 bg-zinc-200 text-zinc-700 rounded text-[10px] font-bold">Edit</button></td></tr>';
             });
         }
 
@@ -1611,8 +1569,7 @@
             }
 
             var sPMap = {}; 
-           orders.forEach(function(o) { 
-                if(o.itemId === 'EXTRA_CHARGE') return; // यह लाइन जोड़ दें
+            orders.forEach(function(o) { 
                 if(!sPMap[o.itemId]) sPMap[o.itemId] = {q:0, r:0}; 
                 sPMap[o.itemId].q += o.quantity; sPMap[o.itemId].r += o.totalAmount; 
             });
@@ -1650,9 +1607,8 @@
                 if(pn === 0) pOut.innerHTML = '<tr><td colspan="2" class="p-2 text-center text-zinc-400">No dues</td></tr>'; 
             }
 
-            var pPMap = {};
+            var pPMap = {}; 
             purchases.forEach(function(p) { 
-                if(p.itemId === 'EXTRA_CHARGE') return; // यह लाइन यहाँ भी जोड़ दें
                 if(!pPMap[p.itemId]) pPMap[p.itemId] = {q:0, c:0}; 
                 pPMap[p.itemId].q += p.quantity; pPMap[p.itemId].c += p.totalAmount; 
             });
@@ -1790,37 +1746,19 @@
                 tb.innerHTML += '<tr class="hover:bg-zinc-50 border-b border-zinc-100"><td class="p-2 font-bold">'+c.name+'</td><td class="p-2"><a href="'+getWaLink(c.phone)+'" target="_blank" class="text-emerald-600 font-bold">💬 '+c.phone+'</a></td><td class="p-2 text-right font-black text-amber-600">'+tp+' Pcs</td><td class="p-2 text-right font-bold text-zinc-900">'+currencyFormatter.format(pu)+'</td><td class="p-2 text-right font-bold text-emerald-600">'+currencyFormatter.format(p>0?p:0)+'</td><td class="p-2 text-right text-red-600 font-black">'+currencyFormatter.format(d)+'</td><td class="p-2 text-center"><button onclick="viewHistory(\''+c.id+'\',\'CUST\')" class="px-3 py-1.5 bg-zinc-800 text-white rounded-xl text-xs font-bold shadow">Ledger</button></td></tr>';
             });
         }
-function renderSuppliers() {
-    var tb = document.getElementById('supplierTableBody'); 
-    if(!tb) return; 
-    tb.innerHTML = '';
-    
-    if(!suppliers || suppliers.length === 0) {
-        tb.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-zinc-400 font-semibold">No suppliers found.</td></tr>';
-        return;
-    }
-    
-    suppliers.forEach(function(s) {
-        var p = purchases.filter(function(x) { return x.supplierId === s.id; });
-        var tp = p.reduce(function(su, x) { return su + x.quantity; }, 0);
-        var tv = (parseFloat(s.openingBalance) || 0) + p.reduce(function(su, x) { return su + x.totalAmount; }, 0);
-        var due = s.balanceDue || 0;
-        var dueClass = due > 0 ? 'text-red-600 font-black' : 'text-zinc-700 font-bold';
 
-        tb.innerHTML += '<tr class="hover:bg-zinc-50 border-b border-zinc-100">' +
-            '<td class="p-3 font-bold text-zinc-900 cursor-pointer hover:text-blue-600" onclick="openSupplierLedger(\''+s.id+'\')">' + s.name + '</td>' +
-            '<td class="p-3 text-zinc-600"><a href="'+getWaLink(s.phone)+'" target="_blank" class="text-emerald-600 font-semibold">'+(s.phone || '-')+'</a></td>' +
-            '<td class="p-3 text-right font-semibold">' + tp + '</td>' +
-            '<td class="p-3 text-right font-semibold">' + currencyFormatter.format(tv) + '</td>' +
-            '<td class="p-3 text-right font-semibold text-emerald-600">' + currencyFormatter.format(s.totalPaid || 0) + '</td>' +
-            '<td class="p-3 text-right ' + dueClass + '">' + currencyFormatter.format(due) + '</td>' +
-            '<td class="p-3 text-center space-x-1 whitespace-nowrap">' +
-                '<button type="button" onclick="openEditSupplierModal(\''+s.id+'\')" class="px-2 py-1 bg-zinc-200 text-zinc-700 rounded text-[10px] font-bold hover:bg-zinc-300">Edit</button>' +
-                '<button type="button" onclick="openSupplierLedger(\''+s.id+'\')" class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold hover:bg-emerald-200">Ledger</button>' +
-            '</td>' +
-        '</tr>';
-    });
-}
+        function renderSuppliers() {
+            var tb = document.getElementById('supplierTableBody'); if(!tb) return; tb.innerHTML=''; 
+            if(suppliers.length===0){tb.innerHTML='<tr><td colspan="7" class="text-center p-4">No suppliers</td></tr>';return;}
+            suppliers.forEach(function(s) { 
+                var p = purchases.filter(function(x) { return x.supplierId===s.id; }); 
+                var tp = p.reduce(function(su,x) { return su+x.quantity; }, 0); 
+                var tv = (parseFloat(s.openingBalance)||0) + p.reduce(function(su,x) { return su+x.totalAmount; }, 0); 
+                var d = s.balanceDue||0; var pd = tv-d; 
+                tb.innerHTML += '<tr class="hover:bg-zinc-50 border-b border-zinc-100"><td class="p-2 font-bold">'+s.name+'</td><td class="p-2"><a href="'+getWaLink(s.phone)+'" target="_blank" class="text-emerald-600 font-bold">💬 '+s.phone+'</a></td><td class="p-2 text-right font-black text-amber-600">'+tp+' Pcs</td><td class="p-2 text-right font-bold text-zinc-900">'+currencyFormatter.format(tv)+'</td><td class="p-2 text-right font-bold text-emerald-600">'+currencyFormatter.format(pd>0?pd:0)+'</td><td class="p-2 text-right text-red-600 font-black">'+currencyFormatter.format(d)+'</td><td class="p-2 text-center"><button onclick="viewHistory(\''+s.id+'\',\'SUPP\')" class="px-3 py-1.5 bg-zinc-800 text-white rounded-xl text-xs font-bold shadow">Ledger</button></td></tr>';
+            });
+        }
+
         function renderPaymentsTab() {
             var tb = document.getElementById('paymentsTableBody'); if(!tb) return; tb.innerHTML=''; 
             var ap=[]; var ti=0, to=0;
@@ -3594,377 +3532,5 @@ function renderSuppliers() {
             document.getElementById('historyModal').classList.remove('hidden');
             toggleBodyScroll(true);
         };
-    </script><!-- Bulk Purchase CSV Import Modal (Supports Meters & Decimals) -->
-    <div id="bulkPurchaseModal" class="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-50 hidden flex items-end md:items-center justify-center p-0 md:p-4">
-        <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl w-full max-w-lg p-6 border max-h-[90vh] overflow-y-auto">
-            <h3 class="text-xl font-extrabold mb-2 text-emerald-700">📥 Bulk Import Purchase Bills (Meters / Pcs)</h3>
-            <p class="text-xs text-zinc-500 font-medium mb-3">फैब्रिक की मात्रा मीटर्स (जैसे 50.5) में और पिस संख्या आसानी से बल्क में अपलोड करें।</p>
-            
-            <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl mb-4 text-[11px] text-emerald-900 space-y-1">
-                <p class="font-bold">CSV Format (Quantity can be decimal for Meters):</p>
-                <code class="block bg-white p-2 rounded border border-emerald-300 font-mono text-[10px] select-all">bill_no,date,supplier_name,supplier_phone,item_sku,item_name,nature,category,quantity,buy_cost,sell_price,amount_paid</code>
-            </div>
-
-            <input type="file" id="csvPurchaseFileInput" accept=".csv" class="mb-4 w-full text-sm text-zinc-500">
-            
-            <div class="flex justify-between items-center gap-3 pt-2">
-                <button type="button" onclick="downloadPurchaseCSVTemplate()" class="text-xs text-blue-600 font-bold hover:underline w-full md:w-auto text-center">📥 Download CSV Template</button>
-                <div class="flex gap-2 w-full md:w-auto">
-                    <button type="button" onclick="closeBulkPurchaseModal()" class="px-4 py-2 bg-zinc-100 rounded-xl text-xs font-bold">Cancel</button>
-                    <button type="button" onclick="processPurchaseCSVImport()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow">Upload & Process</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        window.openBulkPurchaseModal = function() {
-            var f = document.getElementById('csvPurchaseFileInput'); if(f) f.value = '';
-            var m = document.getElementById('bulkPurchaseModal'); if(m) m.classList.remove('hidden');
-            toggleBodyScroll(true);
-        };
-
-        window.closeBulkPurchaseModal = function() {
-            var m = document.getElementById('bulkPurchaseModal'); if(m) m.classList.add('hidden');
-            toggleBodyScroll(false);
-        };
-
-        window.downloadPurchaseCSVTemplate = function() {
-            var csvContent = "bill_no,date,supplier_name,supplier_phone,item_sku,item_name,nature,category,quantity,buy_cost,sell_price,amount_paid,extra_charge\n" +
-                             "BILL-001,2026-10-20,Al-Madina Fabrics,9876543210,FAB-01,Rayon Fabric,Raw Material,Fabrics,100,120,200,5000,200\n" +
-                             "BILL-002,2026-10-20,Zoya Apparels,9123456789,KAF-01,Designer Kaftan,Ready Stock,Kaftans,50,350,650,10000,0\n" +
-                             "BILL-002,2026-10-20,Zoya Apparels,9123456789,KAF-02,Cotton Kaftan,Ready Stock,Kaftans,30,300,600,0,0";
-            
-            var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            var url = URL.createObjectURL(blob);
-            var a = document.createElement("a");
-            a.href = url;
-            a.download = "purchase_bills_multiproduct_template.csv";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        };
-
-       window.processPurchaseCSVImport = function() {
-            var fileInput = document.getElementById('csvPurchaseFileInput');
-            if(!fileInput || !fileInput.files[0]) return alert('कृपया पहले CSV फाइल चुनें!');
-            
-            var file = fileInput.files[0];
-            var reader = new FileReader();
-            
-            reader.onload = function(e) {
-                var lines = e.target.result.split('\n');
-                var importedBillsCount = 0;
-                var billGroups = {}; // एक ही बिल के सभी आइटम्स को एक साथ ग्रुप करने के लिए
-                
-                // 1. पहले सभी लाइनों को बिल नंबर के हिसाब से ग्रुप करें
-                for(var i = 1; i < lines.length; i++) {
-                    var row = lines[i].trim();
-                    if(!row) continue;
-                    
-                    var cols = row.split(',');
-                    if(cols.length >= 11) {
-                        var billNo = cols[0].trim();
-                        if(!billGroups[billNo]) {
-                            billGroups[billNo] = {
-                                billNo: billNo,
-                                date: cols[1].trim() ? new Date(cols[1].trim()).toISOString() : new Date().toISOString(),
-                                supName: cols[2].trim(),
-                                supPhone: cols[3].trim() || '0000000000',
-                                amountPaid: parseFloat(cols[11]) || 0,
-                                extraCharge: cols[12] ? (parseFloat(cols[12]) || 0) : 0,
-                                items: []
-                            };
-                        }
-                        billGroups[billNo].items.push({
-                            sku: cols[4].trim(),
-                            itemName: cols[5].trim(),
-                            nature: cols[6].trim() || 'Raw Material',
-                            category: cols[7].trim() || 'Fabrics',
-                            qty: parseFloat(cols[8]) || 0,
-                            buyCost: parseFloat(cols[9]) || 0,
-                            sellPrice: parseFloat(cols[10]) || parseFloat(cols[9]) || 0
-                        });
-                    }
-                }
-                
-                // 2. अब हर बिल को प्रोसेस करें
-                Object.values(billGroups).forEach(function(bill) {
-                    var supObj = suppliers.find(function(s) { return s.name.toLowerCase() === bill.supName.toLowerCase(); });
-                    if(!supObj) {
-                        supObj = {
-                            id: '_' + Math.random().toString(36).substr(2, 9),
-                            name: bill.supName,
-                            phone: bill.supPhone,
-                            address: 'LOCAL',
-                            openingBalance: 0,
-                            balanceDue: 0
-                        };
-                        suppliers.push(supObj);
-                    }
-                    
-                    var currentBillItemsTotal = 0;
-                    
-                    // बिल के हर आइटम के लिए स्टॉक और परचेस एंट्री बनाएं
-                    bill.items.forEach(function(it) {
-                        if(it.sku && it.itemName && it.qty > 0) {
-                            var prodObj = inventory.find(function(item) { return item.sku.toLowerCase() === it.sku.toLowerCase(); });
-                            if(!prodObj) {
-                                prodObj = {
-                                    id: '_' + Math.random().toString(36).substr(2, 9),
-                                    image: '',
-                                    nature: it.nature,
-                                    sku: it.sku,
-                                    name: it.itemName,
-                                    category: it.category,
-                                    quantity: 0,
-                                    cost: it.buyCost,
-                                    price: it.sellPrice,
-                                    soldCount: 0
-                                };
-                                inventory.push(prodObj);
-                                if(it.nature === 'Raw Material') { if(!rawCategories.includes(it.category)) rawCategories.push(it.category); }
-                                else { if(!readyCategories.includes(it.category)) readyCategories.push(it.category); }
-                            } else {
-                                prodObj.quantity += it.qty;
-                                prodObj.cost = it.buyCost;
-                                prodObj.price = it.sellPrice;
-                            }
-                            
-                            var rowTotal = it.qty * it.buyCost;
-                            currentBillItemsTotal += rowTotal;
-                            
-                            purchases.push({
-                                id: '_' + Math.random().toString(36).substr(2, 9),
-                                invoiceNo: bill.billNo,
-                                supplierId: supObj.id,
-                                itemId: prodObj.id,
-                                quantity: it.qty,
-                                costPrice: it.buyCost,
-                                totalAmount: rowTotal,
-                                amountPaid: 0, // भुगतान को अलग से मैनेज किया जाएगा
-                                date: bill.date
-                            });
-                        }
-                    });
-                    
-                    var grandBillTotal = currentBillItemsTotal + bill.extraCharge;
-                    
-                    // अगर भाड़ा (Extra Charge) है, तो उसकी एंट्री जोड़ें
-                    if(bill.extraCharge > 0) {
-                        purchases.push({
-                            id: '_' + Math.random().toString(36).substr(2, 9),
-                            invoiceNo: bill.billNo,
-                            supplierId: supObj.id,
-                            itemId: 'EXTRA_CHARGE',
-                            extraLabel: 'Transport / भाड़ा',
-                            quantity: 0,
-                            costPrice: bill.extraCharge,
-                            totalAmount: bill.extraCharge,
-                            amountPaid: 0,
-                            date: bill.date
-                        });
-                    }
-                    
-                    // सप्लायर के पहले आइटम पर कुल पैड अमाउंट असाइन करें ताकि लेजर में सही दिखे
-                    if(bill.amountPaid > 0) {
-                        var firstPur = purchases.find(function(p) { return p.invoiceNo === bill.billNo; });
-                        if(firstPur) firstPur.amountPaid = bill.amountPaid;
-                    }
-                    
-                    // सप्लायर का बकाया (Due) अपडेट करें
-                    supObj.balanceDue = (supObj.balanceDue || 0) + (grandBillTotal - bill.amountPaid);
-                    importedBillsCount++;
-                });
-                
-                saveData();
-                closeBulkPurchaseModal();
-    alert('सफलतापूर्वक ' + importedBillsCount + ' मल्टी-आइटम परचेस बिल अपलोड हो गए हैं!');
-};
-reader.readAsText(file);
-};
-// --- 13. MASTER FIX FOR SUPPLIER TABLE & PAID AMOUNT ---
-        window.renderSuppliers = window.renderSupplierTable = function() {
-            var tbody = document.getElementById('supplierTableBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            
-            if(!suppliers || suppliers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-zinc-400 font-semibold">No suppliers found.</td></tr>';
-                return;
-            }
-            
-            suppliers.forEach(function(s) {
-                var supPurchases = purchases.filter(function(x) { return x.supplierId === s.id; });
-                var tp = supPurchases.reduce(function(su, x) { return su + (parseFloat(x.quantity) || 0); }, 0);
-                var tv = (parseFloat(s.openingBalance) || 0) + supPurchases.reduce(function(su, x) { return su + (parseFloat(x.totalAmount) || parseFloat(x.amount) || 0); }, 0);
-                
-                var paidFromPurchases = supPurchases.reduce(function(su, x) { 
-                    return su + (parseFloat(x.amountPaid) || parseFloat(x.amount) || parseFloat(x.paid) || 0); 
-                }, 0);
-                
-                var paidFromSupPayments = supPayments.filter(function(p) { 
-                    return p.supplierId === s.id || p.supId === s.id; 
-                }).reduce(function(su, x) { 
-                    return su + (parseFloat(x.amountPaid) || parseFloat(x.amount) || parseFloat(x.paid) || 0); 
-                }, 0);
-                
-                var calculatedPaid = paidFromPurchases + paidFromSupPayments;
-                var due = (s.balanceDue !== undefined && s.balanceDue !== null) ? parseFloat(s.balanceDue) : (tv - calculatedPaid);
-                
-                // Total Value और Payable Due के अंतर से भी Paid अमाउंट निकालें ताकि कभी 0.00 न रहे
-                var paidByDiff = tv - due;
-                var totalPaidAmt = Math.max(calculatedPaid, paidByDiff, parseFloat(s.totalPaid) || 0);
-                if (totalPaidAmt < 0) totalPaidAmt = 0;
-
-                var dueClass = due > 0 ? 'text-red-600 font-black' : 'text-zinc-700 font-bold';
-
-                tbody.innerHTML += '<tr class="hover:bg-zinc-50 transition-colors border-b border-zinc-100">' +
-                    '<td class="p-3 font-bold text-zinc-900 cursor-pointer hover:text-blue-600" onclick="openSupplierLedger(\''+s.id+'\')">' + s.name + '</td>' +
-                    '<td class="p-3 text-zinc-600"><a href="'+getWaLink(s.phone)+'" target="_blank" class="text-emerald-600 font-semibold">'+(s.phone || '-')+'</a></td>' +
-                    '<td class="p-3 text-right font-semibold">' + Number(tp.toFixed(2)) + '</td>' +
-                    '<td class="p-3 text-right font-semibold">' + currencyFormatter.format(tv) + '</td>' +
-                    '<td class="p-3 text-right font-bold text-emerald-600">' + currencyFormatter.format(totalPaidAmt) + '</td>' +
-                    '<td class="p-3 text-right ' + dueClass + '">' + currencyFormatter.format(due > 0 ? due : 0) + '</td>' +
-                    '<td class="p-3 text-center space-x-1 whitespace-nowrap">' +
-                        '<button type="button" onclick="openEditSupplierModal(\''+s.id+'\')" class="px-2 py-1 bg-zinc-200 text-zinc-700 rounded text-[10px] font-bold hover:bg-zinc-300">Edit</button>' +
-                        '<button type="button" onclick="openSupplierLedger(\''+s.id+'\')" class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold hover:bg-emerald-200">Ledger</button>' +
-                    '</td>' +
-                '</tr>';
-            });
-        };
-
-        // --- 14. INTERACTIVE CLICKABLE LEDGER ---
-        window.viewHistory = function(id, t) {
-            var tb = document.getElementById('historyContent');
-            if(!tb) return;
-            tb.innerHTML = '';
-            var tr = [];
-
-            if(t === 'CUST') {
-                var c = customers.find(function(x) { return x.id === id; });
-                if(!c) return;
-                var groupedOrders = {};
-                orders.filter(function(o) { return o.customerId === id; }).forEach(function(o) {
-                    if(!groupedOrders[o.invoiceNo]) {
-                        groupedOrders[o.invoiceNo] = { id: o.id, d: new Date(o.date), rf: o.invoiceNo, nt: 'Sales Invoice', amt: 0, pd: 0, qty: 0, kind: 'SALE' };
-                    }
-                    groupedOrders[o.invoiceNo].amt += (parseFloat(o.totalAmount) || 0);
-                    groupedOrders[o.invoiceNo].pd += (parseFloat(o.amountPaid) || parseFloat(o.amount) || 0);
-                    if(o.itemId !== 'EXTRA_CHARGE') groupedOrders[o.invoiceNo].qty += (parseInt(o.quantity) || 0);
-                });
-                Object.values(groupedOrders).forEach(function(go) { tr.push(go); });
-
-                payments.filter(function(p) { return p.customerId === id; }).forEach(function(p) {
-                    tr.push({ id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Payment Received', amt: 0, pd: parseFloat(p.amountPaid) || parseFloat(p.amount) || 0, qty: 0, kind: 'PAY_IN' });
-                });
-                document.getElementById('historyTitle').innerText = '📒 Customer Ledger: ' + c.name + ' (Due: ' + currencyFormatter.format(c.balanceDue || 0) + ')';
-            } else {
-                var s = suppliers.find(function(x) { return x.id === id; });
-                if(!s) return;
-                
-                var groupedPurchases = {};
-                purchases.filter(function(p) { return p.supplierId === id || (p.supplierName && s.name && p.supplierName.toLowerCase() === s.name.toLowerCase()); }).forEach(function(p) {
-                    if(!groupedPurchases[p.invoiceNo]) {
-                        groupedPurchases[p.invoiceNo] = { id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Purchase Bill', amt: 0, pd: 0, qty: 0, kind: 'PURCHASE' };
-                    }
-                    groupedPurchases[p.invoiceNo].amt += (parseFloat(p.totalAmount) || parseFloat(p.amount) || 0);
-                    groupedPurchases[p.invoiceNo].pd += (parseFloat(p.amountPaid) || parseFloat(p.amount) || parseFloat(p.paid) || 0);
-                    if(p.itemId !== 'EXTRA_CHARGE') groupedPurchases[p.invoiceNo].qty += (parseInt(p.quantity) || 0);
-                });
-                Object.values(groupedPurchases).forEach(function(gp) { tr.push(gp); });
-
-                supPayments.filter(function(p) { return p.supplierId === id || p.supId === id || (p.partyName && s.name && p.partyName.toLowerCase() === s.name.toLowerCase()); }).forEach(function(p) {
-                    tr.push({ id: p.id, d: new Date(p.date), rf: p.receiptNo || 'PAY-OUT', nt: 'Payment Given (Outward)', amt: 0, pd: parseFloat(p.amountPaid) || parseFloat(p.amount) || parseFloat(p.paid) || 0, qty: 0, kind: 'PAY_OUT' });
-                });
-                
-                document.getElementById('historyTitle').innerText = '📒 Supplier Ledger: ' + s.name + ' (Payable Due: ' + currencyFormatter.format(s.balanceDue || 0) + ')';
-            }
-
-            tr.sort(function(a, b) { return b.d - a.d; });
-
-            var h = '<div class="border rounded-2xl overflow-hidden"><table class="w-full text-left text-xs whitespace-nowrap"><thead class="bg-zinc-100 font-extrabold text-zinc-700"><tr><th class="p-2.5">Date</th><th class="p-2.5">Ref / Bill No</th><th class="p-2.5">Type</th><th class="p-2.5 text-right">Bill Amt</th><th class="p-2.5 text-right">Paid Amount</th><th class="p-2.5 text-center">Actions</th></tr></thead><tbody class="divide-y font-medium">';
-            if(tr.length === 0) {
-                h += '<tr><td colspan="6" class="p-6 text-center text-zinc-400 font-bold">No transactions recorded yet</td></tr>';
-            } else {
-                tr.forEach(function(x) {
-                    var refLink = x.rf;
-                    var actionBtns = '';
-                    if(x.kind === 'SALE') {
-                        refLink = `<button type="button" onclick="viewOrderReceipt('${x.rf}')" class="text-blue-600 hover:text-blue-800 font-black underline">🧾 ${x.rf}</button>`;
-                        actionBtns = `<button type="button" onclick="editSalesInvoice('${x.rf}')" class="px-2 py-1 bg-blue-100 text-blue-700 rounded font-bold">Edit</button>`;
-                    } else if(x.kind === 'PURCHASE') {
-                        refLink = `<button type="button" onclick="viewPurchaseReceipt('${x.rf}')" class="text-emerald-700 hover:text-emerald-900 font-black underline">📥 ${x.rf}</button>`;
-                        actionBtns = `<button type="button" onclick="editPurchaseInvoice('${x.rf}')" class="px-2 py-1 bg-blue-100 text-blue-700 rounded font-bold">Edit</button>`;
-                    } else if(x.kind === 'PAY_IN' || x.kind === 'PAY_OUT') {
-                        refLink = `<span class="font-black text-purple-700">💸 ${x.rf}</span>`;
-                        actionBtns = `<button type="button" onclick="closeHistoryModal(); openGlobalPaymentModal('${x.kind === 'PAY_IN' ? 'IN' : 'OUT'}','${x.id}')" class="px-2 py-1 bg-blue-100 text-blue-700 rounded font-bold">Edit</button>`;
-                    }
-
-                    var qtyBadge = x.qty > 0 ? ` <span class="text-[10px] bg-zinc-100 px-1.5 py-0.5 rounded font-bold text-zinc-600">(${x.qty} Pcs)</span>` : '';
-                    h += `<tr class="hover:bg-zinc-50">
-                        <td class="p-2.5 text-zinc-500">${x.d.toLocaleDateString()}</td>
-                        <td class="p-2.5">${refLink}</td>
-                        <td class="p-2.5 font-bold text-zinc-700">${x.nt}${qtyBadge}</td>
-                        <td class="p-2.5 text-right font-black text-zinc-900">${x.amt > 0 ? currencyFormatter.format(x.amt) : '-'}</td>
-                        <td class="p-2.5 text-right font-black text-emerald-600">${x.pd > 0 ? currencyFormatter.format(x.pd) : '-'}</td>
-                        <td class="p-2.5 text-center space-x-1">${actionBtns}</td>
-                    </tr>`;
-                });
-            }
-            h += '</tbody></table></div>';
-            tb.innerHTML = h;
-            document.getElementById('historyModal').classList.remove('hidden');
-            toggleBodyScroll(true);
-        };
-
-        window.openEditSupplierModal = function(supId) {
-            var sup = suppliers.find(function(s) { return s.id === supId; });
-            if(!sup) return alert('Supplier nahi mila!');
-            document.getElementById('editSupId').value = sup.id;
-            document.getElementById('editSupName').value = sup.name || '';
-            document.getElementById('editSupPhone').value = sup.phone || '';
-            document.getElementById('editSupAddress').value = sup.address || '';
-            var m = document.getElementById('editSupplierModal');
-            if(m) m.classList.remove('hidden');
-            toggleBodyScroll(true);
-        };
-
-        window.closeEditSupplierModal = function() {
-            var m = document.getElementById('editSupplierModal');
-            if(m) m.classList.add('hidden');
-            toggleBodyScroll(false);
-        };
-
-        window.saveSupplierEdit = function() {
-            var supId = document.getElementById('editSupId').value;
-            var newName = document.getElementById('editSupName').value.trim();
-            var newPhone = document.getElementById('editSupPhone').value.trim();
-            var newAddress = document.getElementById('editSupAddress').value.trim();
-            if(!newName) return alert('Supplier ka naam khali nahi ho sakta!');
-            var sup = suppliers.find(function(s) { return s.id === supId; });
-            if(sup) {
-                sup.name = newName;
-                sup.phone = newPhone;
-                sup.address = newAddress;
-                saveData();
-                closeEditSupplierModal();
-            }
-        };
-
-        window.openSupplierLedger = function(supId) {
-            var sup = suppliers.find(function(s) { return s.id === supId; });
-            if (!sup) return alert('Supplier nahi mila!');
-            if (typeof viewHistory === 'function') {
-                viewHistory(supId, 'SUPP');
-            }
-        };
-
-        document.addEventListener('DOMContentLoaded', function() {
-            if(typeof renderSupplierTable === 'function') {
-                renderSupplierTable();
-            }
-        });
-    </script>
-</body>
+    </script></body>
 </html>
