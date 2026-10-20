@@ -391,9 +391,12 @@
             <!-- TAB 3: SUPPLIERS -->
             <div id="tabSuppliers" class="space-y-6 hidden">
                 <div class="bg-white rounded-2xl shadow-sm border p-4 md:p-6 space-y-4">
-                    <div class="flex justify-between items-center">
+                    <div class="flex flex-wrap justify-between items-center gap-2">
                         <h3 class="text-lg font-extrabold">Supplier Ledger</h3>
-                        <button onclick="openSupplierModal()" class="bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs font-bold shadow">+ Add Supplier</button>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="openBulkPurchaseModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow">📂 Bulk Purchase CSV</button>
+                            <button onclick="openSupplierModal()" class="bg-zinc-900 text-white px-4 py-2 rounded-xl text-xs font-bold shadow">+ Add Supplier</button>
+                        </div>
                     </div>
                     <div class="table-container overflow-x-auto w-full">
                         <table class="w-full text-left border-collapse whitespace-nowrap min-w-[800px]">
