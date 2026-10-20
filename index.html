@@ -3851,29 +3851,26 @@ reader.readAsText(file);
                 alert('Supplier ki details successfully update ho gayi hain!');
             }
         };
-            
+        
         window.openSupplierLedger = function(supId) {
-    var sup = suppliers.find(function(s) { return s.id === supId; });
-    if (!sup) return alert('Supplier nahi mila!');
-    
-    var modal = document.getElementById('supplierLedgerModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        toggleBodyScroll(true);
-    }
-    
-    if (typeof renderSupplierLedgerDetails === 'function') {
-        renderSupplierLedgerDetails(supId);
-    }
-};
-// पेज लोड होते ही सप्लायर टेबल को रेंडर करने के लिए
-document.addEventListener('DOMContentLoaded', function() {
-    if(typeof renderSupplierTable === 'function') {
-        renderSupplierTable();
-    }
-});
-   
-</script>
+            var sup = suppliers.find(function(s) { return s.id === supId; });
+            if (!sup) return alert('Supplier nahi mila!');
+            
+            // सीधे प्रोजेक्ट के मुख्य लेजर हिस्ट्री मॉडल का उपयोग करें
+            if (typeof viewHistory === 'function') {
+                viewHistory(supId, 'SUPP');
+            } else {
+                alert('Ledger history viewer not found!');
+            }
+        };
+
+        // पेज लोड होते ही सप्लायर टेबल को रेंडर करने के लिए
+        document.addEventListener('DOMContentLoaded', function() {
+            if(typeof renderSupplierTable === 'function') {
+                renderSupplierTable();
+            }
+        });
+    </script>
 </body>
 </html>
         
