@@ -3753,13 +3753,13 @@
                 
                 saveData();
                 closeBulkPurchaseModal();
-                alert('सफलतापूर्वक ' + importedBillsCount + ' मल्टी-आइटम परचेस बिल अपलोड हो गए हैं!');
-            };
-            reader.readAsText(file);
+    alert('सफलतापूर्वक ' + importedBillsCount + ' मल्टी-आइटम परचेस बिल अपलोड हो गए हैं!');
+};
+reader.readAsText(file);
 };
 
-// --- Yahan se aapka Supplier Edit wala script shuru hoga ---
-function renderSupplierTable() {
+// --- इसके तुरंत बाद आपका सप्लायर वाला कोड शुरू होगा ---
+        function renderSupplierTable() {
     var tbody = document.getElementById('supplierTableBody');
     if(!tbody) return;
     tbody.innerHTML = '';
