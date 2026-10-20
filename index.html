@@ -3825,6 +3825,12 @@ reader.readAsText(file);
                 alert('Supplier ki details successfully update ho gayi hain!');
             }
         };
+        // पेज लोड होते ही सप्लायर टेबल को रेंडर करने के लिए
+document.addEventListener('DOMContentLoaded', function() {
+    if(typeof renderSupplierTable === 'function') {
+        renderSupplierTable();
+    }
+});
         
 </script>
 </body>
