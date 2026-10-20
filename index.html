@@ -3755,39 +3755,35 @@
                 closeBulkPurchaseModal();
                 alert('सफलतापूर्वक ' + importedBillsCount + ' मल्टी-आइटम परचेस बिल अपलोड हो गए हैं!');
             };
-            
             reader.readAsText(file);
-        };
-        reader.readAsText(file);
-    };
 };
 
-// --- Yahan apna naya Supplier Edit wala script paste karein ---
-        function renderSupplierTable() {
-            var tbody = document.getElementById('supplierTableBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            
-            if(!suppliers || suppliers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-zinc-400 font-semibold">No suppliers found.</td></tr>';
-                return;
-            }
-            
-            suppliers.forEach(function(s) {
-                var dueClass = s.balanceDue > 0 ? 'text-red-600 font-black' : 'text-zinc-700 font-bold';
-                tbody.innerHTML += '<tr class="hover:bg-zinc-50 transition-colors border-b">' +
-                    '<td class="p-3 font-bold text-zinc-900 cursor-pointer hover:text-blue-600" onclick="openSupplierLedger(\''+s.id+'\')">' + s.name + '</td>' +
-                    '<td class="p-3 text-zinc-600">' + (s.phone || '-') + '</td>' +
-                    '<td class="p-3 text-right font-semibold">' + (s.totalQty || 0) + '</td>' +
-                    '<td class="p-3 text-right font-semibold">' + currencyFormatter.format(s.totalValue || 0) + '</td>' +
-                    '<td class="p-3 text-right ' + dueClass + '">' + currencyFormatter.format(s.balanceDue || 0) + '</td>' +
-                    '<td class="p-3 text-center space-x-1 whitespace-nowrap">' +
-                        '<button onclick="openEditSupplierModal(\''+s.id+'\')" class="px-2 py-1 bg-zinc-200 text-zinc-700 rounded text-[10px] font-bold hover:bg-zinc-300">Edit</button>' +
-                        '<button onclick="openSupplierLedger(\''+s.id+'\')" class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold hover:bg-emerald-200">Ledger</button>' +
-                    '</td>' +
-                '</tr>';
-            });
-        }
+// --- Yahan se aapka Supplier Edit wala script shuru hoga ---
+function renderSupplierTable() {
+    var tbody = document.getElementById('supplierTableBody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    
+    if(!suppliers || suppliers.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-zinc-400 font-semibold">No suppliers found.</td></tr>';
+        return;
+    }
+    
+    suppliers.forEach(function(s) {
+        var dueClass = s.balanceDue > 0 ? 'text-red-600 font-black' : 'text-zinc-700 font-bold';
+        tbody.innerHTML += '<tr class="hover:bg-zinc-50 transition-colors border-b">' +
+            '<td class="p-3 font-bold text-zinc-900 cursor-pointer hover:text-blue-600" onclick="openSupplierLedger(\''+s.id+'\')">' + s.name + '</td>' +
+            '<td class="p-3 text-zinc-600">' + (s.phone || '-') + '</td>' +
+            '<td class="p-3 text-right font-semibold">' + (s.totalQty || 0) + '</td>' +
+            '<td class="p-3 text-right font-semibold">' + currencyFormatter.format(s.totalValue || 0) + '</td>' +
+            '<td class="p-3 text-right ' + dueClass + '">' + currencyFormatter.format(s.balanceDue || 0) + '</td>' +
+            '<td class="p-3 text-center space-x-1 whitespace-nowrap">' +
+                '<button onclick="openEditSupplierModal(\''+s.id+'\')" class="px-2 py-1 bg-zinc-200 text-zinc-700 rounded text-[10px] font-bold hover:bg-zinc-300">Edit</button>' +
+                '<button onclick="openSupplierLedger(\''+s.id+'\')" class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold hover:bg-emerald-200">Ledger</button>' +
+            '</td>' +
+        '</tr>';
+    });
+}
 
         window.openEditSupplierModal = function(supId) {
             var sup = suppliers.find(function(s) { return s.id === supId; });
