@@ -3785,7 +3785,7 @@ reader.readAsText(file);
 };
         
 // --- 13. SUPPLIER TABLE RENDER (FLEXIBLE PAYMENT & PAID AMOUNT FIX) ---
-        function renderSupplierTable() {
+function renderSupplierTable() {
             var tbody = document.getElementById('supplierTableBody');
             if(!tbody) return;
             tbody.innerHTML = '';
@@ -3796,25 +3796,31 @@ reader.readAsText(file);
             }
             
             suppliers.forEach(function(s) {
-                // इस सप्लायर के सभी परचेस बिल (ID या Name से मैच करें)
+                // इस सप्लायर के परचेस बिल ढूंढें
                 var supPurchases = purchases.filter(function(x) { 
-                    return x.supplierId === s.id || (s.name && x.supplierName && x.supplierName.toLowerCase() === s.name.toLowerCase()); 
+                    return x.supplierId === s.id; 
                 });
-                var tp = supPurchases.reduce(function(su, x) { return su + (parseInt(x.quantity) || 0); }, 0);
-                var tv = (parseFloat(s.openingBalance) || 0) + supPurchases.reduce(function(su, x) { return su + (parseFloat(x.totalAmount) || parseFloat(x.amount) || 0); }, 0);
                 
-                // कुल चुकाया गया पैसा (Flexible check: amountPaid, amount, या paid)
+                var tp = supPurchases.reduce(function(su, x) { return su + (parseInt(x.quantity) || 0); }, 0);
+                var tv = (parseFloat(s.openingBalance) || 0) + supPurchases.reduce(function(su, x) { return su + (parseFloat(x.totalAmount) || 0); }, 0);
+                
+                // --- यहाँ हम हर संभव नाम से Paid अमाउंट ढूंढ रहे हैं ---
                 var paidFromPurchases = supPurchases.reduce(function(su, x) { 
-                    return su + (parseFloat(x.amountPaid) || parseFloat(x.amount) || parseFloat(x.paid) || 0); 
+                    var pAmt = x.amountPaid !== undefined ? x.amountPaid : (x.paid !== undefined ? x.paid : (x.amount || 0));
+                    return su + (parseFloat(pAmt) || 0); 
                 }, 0);
                 
-                var paidFromSupPayments = supPayments.filter(function(p) { 
-                    return p.supplierId === s.id || p.supId === s.id || (p.partyName && s.name && p.partyName.toLowerCase() === s.name.toLowerCase()); 
-                }).reduce(function(su, x) { 
-                    return su + (parseFloat(x.amountPaid) || parseFloat(x.amount) || parseFloat(x.paid) || 0); 
+                var supPys = supPayments.filter(function(p) { return p.supplierId === s.id; });
+                var paidFromSupPayments = supPys.reduce(function(su, x) { 
+                    var pAmt = x.amountPaid !== undefined ? x.amountPaid : (x.paid !== undefined ? x.paid : (x.amount || 0));
+                    return su + (parseFloat(pAmt) || 0); 
                 }, 0);
                 
                 var totalPaidAmt = paidFromPurchases + paidFromSupPayments;
+                
+                // कंसोल में चेक करने के लिए कि डेटा मिल रहा है या नहीं
+                console.log("Supplier:", s.name, "Purchases Paid:", paidFromPurchases, "SupPayments Paid:", paidFromSupPayments);
+
                 var due = tv - totalPaidAmt;
                 var dueClass = due > 0 ? 'text-red-600 font-black' : 'text-zinc-700 font-bold';
 
