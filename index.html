@@ -3783,9 +3783,8 @@ function renderSuppliers() {
 };
 reader.readAsText(file);
 };
-        
-// --- 13. SUPPLIER TABLE RENDER (FLEXIBLE PAYMENT & PAID AMOUNT FIX) ---
-function renderSupplierTable() {
+// --- 13. MASTER FIX FOR SUPPLIER TABLE & PAID AMOUNT ---
+        window.renderSuppliers = window.renderSupplierTable = function() {
             var tbody = document.getElementById('supplierTableBody');
             if(!tbody) return;
             tbody.innerHTML = '';
@@ -3796,44 +3795,46 @@ function renderSupplierTable() {
             }
             
             suppliers.forEach(function(s) {
-                // इस सप्लायर के सभी परचेस बिल
                 var supPurchases = purchases.filter(function(x) { return x.supplierId === s.id; });
-                var tp = supPurchases.reduce(function(su, x) { return su + (parseInt(x.quantity) || 0); }, 0);
+                var tp = supPurchases.reduce(function(su, x) { return su + (parseFloat(x.quantity) || 0); }, 0);
                 var tv = (parseFloat(s.openingBalance) || 0) + supPurchases.reduce(function(su, x) { return su + (parseFloat(x.totalAmount) || parseFloat(x.amount) || 0); }, 0);
                 
-                // बिल के साथ दिया गया पेड अमाउंट
                 var paidFromPurchases = supPurchases.reduce(function(su, x) { 
-                    var p = parseFloat(x.amountPaid) || parseFloat(x.amount) || parseFloat(x.paid) || 0;
-                    return su + p; 
+                    return su + (parseFloat(x.amountPaid) || parseFloat(x.amount) || parseFloat(x.paid) || 0); 
                 }, 0);
                 
-                // अलग से दिए गए पेमेंट्स (supPayments) - यहाँ सभी संभव नामों को जोड़ दिया गया है ताकि 0.00 न आए
                 var paidFromSupPayments = supPayments.filter(function(p) { 
                     return p.supplierId === s.id || p.supId === s.id; 
                 }).reduce(function(su, x) { 
-                    var p = parseFloat(x.amountPaid) || parseFloat(x.amount) || parseFloat(x.paid) || 0;
-                    return su + p; 
+                    return su + (parseFloat(x.amountPaid) || parseFloat(x.amount) || parseFloat(x.paid) || 0); 
                 }, 0);
                 
-                var totalPaidAmt = paidFromPurchases + paidFromSupPayments;
-                var due = tv - totalPaidAmt;
+                var calculatedPaid = paidFromPurchases + paidFromSupPayments;
+                var due = (s.balanceDue !== undefined && s.balanceDue !== null) ? parseFloat(s.balanceDue) : (tv - calculatedPaid);
+                
+                // Total Value और Payable Due के अंतर से भी Paid अमाउंट निकालें ताकि कभी 0.00 न रहे
+                var paidByDiff = tv - due;
+                var totalPaidAmt = Math.max(calculatedPaid, paidByDiff, parseFloat(s.totalPaid) || 0);
+                if (totalPaidAmt < 0) totalPaidAmt = 0;
+
                 var dueClass = due > 0 ? 'text-red-600 font-black' : 'text-zinc-700 font-bold';
 
-                tbody.innerHTML += '<tr class="hover:bg-zinc-50 transition-colors border-b">' +
+                tbody.innerHTML += '<tr class="hover:bg-zinc-50 transition-colors border-b border-zinc-100">' +
                     '<td class="p-3 font-bold text-zinc-900 cursor-pointer hover:text-blue-600" onclick="openSupplierLedger(\''+s.id+'\')">' + s.name + '</td>' +
-                    '<td class="p-3 text-zinc-600">' + (s.phone || '-') + '</td>' +
-                    '<td class="p-3 text-right font-semibold">' + tp + '</td>' +
+                    '<td class="p-3 text-zinc-600"><a href="'+getWaLink(s.phone)+'" target="_blank" class="text-emerald-600 font-semibold">'+(s.phone || '-')+'</a></td>' +
+                    '<td class="p-3 text-right font-semibold">' + Number(tp.toFixed(2)) + '</td>' +
                     '<td class="p-3 text-right font-semibold">' + currencyFormatter.format(tv) + '</td>' +
                     '<td class="p-3 text-right font-bold text-emerald-600">' + currencyFormatter.format(totalPaidAmt) + '</td>' +
                     '<td class="p-3 text-right ' + dueClass + '">' + currencyFormatter.format(due > 0 ? due : 0) + '</td>' +
                     '<td class="p-3 text-center space-x-1 whitespace-nowrap">' +
-                        '<button onclick="openEditSupplierModal(\''+s.id+'\')" class="px-2 py-1 bg-zinc-200 text-zinc-700 rounded text-[10px] font-bold hover:bg-zinc-300">Edit</button>' +
-                        '<button onclick="openSupplierLedger(\''+s.id+'\')" class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold hover:bg-emerald-200">Ledger</button>' +
+                        '<button type="button" onclick="openEditSupplierModal(\''+s.id+'\')" class="px-2 py-1 bg-zinc-200 text-zinc-700 rounded text-[10px] font-bold hover:bg-zinc-300">Edit</button>' +
+                        '<button type="button" onclick="openSupplierLedger(\''+s.id+'\')" class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold hover:bg-emerald-200">Ledger</button>' +
                     '</td>' +
                 '</tr>';
             });
-        }
-        // --- 14. INTERACTIVE CLICKABLE LEDGER (FLEXIBLE PAID AMOUNT FIX) ---
+        };
+
+        // --- 14. INTERACTIVE CLICKABLE LEDGER ---
         window.viewHistory = function(id, t) {
             var tb = document.getElementById('historyContent');
             if(!tb) return;
@@ -3917,13 +3918,45 @@ function renderSupplierTable() {
             toggleBodyScroll(true);
         };
 
+        window.openEditSupplierModal = function(supId) {
+            var sup = suppliers.find(function(s) { return s.id === supId; });
+            if(!sup) return alert('Supplier nahi mila!');
+            document.getElementById('editSupId').value = sup.id;
+            document.getElementById('editSupName').value = sup.name || '';
+            document.getElementById('editSupPhone').value = sup.phone || '';
+            document.getElementById('editSupAddress').value = sup.address || '';
+            var m = document.getElementById('editSupplierModal');
+            if(m) m.classList.remove('hidden');
+            toggleBodyScroll(true);
+        };
+
+        window.closeEditSupplierModal = function() {
+            var m = document.getElementById('editSupplierModal');
+            if(m) m.classList.add('hidden');
+            toggleBodyScroll(false);
+        };
+
+        window.saveSupplierEdit = function() {
+            var supId = document.getElementById('editSupId').value;
+            var newName = document.getElementById('editSupName').value.trim();
+            var newPhone = document.getElementById('editSupPhone').value.trim();
+            var newAddress = document.getElementById('editSupAddress').value.trim();
+            if(!newName) return alert('Supplier ka naam khali nahi ho sakta!');
+            var sup = suppliers.find(function(s) { return s.id === supId; });
+            if(sup) {
+                sup.name = newName;
+                sup.phone = newPhone;
+                sup.address = newAddress;
+                saveData();
+                closeEditSupplierModal();
+            }
+        };
+
         window.openSupplierLedger = function(supId) {
             var sup = suppliers.find(function(s) { return s.id === supId; });
             if (!sup) return alert('Supplier nahi mila!');
             if (typeof viewHistory === 'function') {
                 viewHistory(supId, 'SUPP');
-            } else {
-                alert('Ledger viewer function not found!');
             }
         };
 
@@ -3932,8 +3965,6 @@ function renderSupplierTable() {
                 renderSupplierTable();
             }
         });
-        
     </script>
 </body>
 </html>
-
