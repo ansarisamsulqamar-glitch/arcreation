@@ -1790,19 +1790,37 @@
                 tb.innerHTML += '<tr class="hover:bg-zinc-50 border-b border-zinc-100"><td class="p-2 font-bold">'+c.name+'</td><td class="p-2"><a href="'+getWaLink(c.phone)+'" target="_blank" class="text-emerald-600 font-bold">💬 '+c.phone+'</a></td><td class="p-2 text-right font-black text-amber-600">'+tp+' Pcs</td><td class="p-2 text-right font-bold text-zinc-900">'+currencyFormatter.format(pu)+'</td><td class="p-2 text-right font-bold text-emerald-600">'+currencyFormatter.format(p>0?p:0)+'</td><td class="p-2 text-right text-red-600 font-black">'+currencyFormatter.format(d)+'</td><td class="p-2 text-center"><button onclick="viewHistory(\''+c.id+'\',\'CUST\')" class="px-3 py-1.5 bg-zinc-800 text-white rounded-xl text-xs font-bold shadow">Ledger</button></td></tr>';
             });
         }
+function renderSuppliers() {
+    var tb = document.getElementById('supplierTableBody'); 
+    if(!tb) return; 
+    tb.innerHTML = '';
+    
+    if(!suppliers || suppliers.length === 0) {
+        tb.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-zinc-400 font-semibold">No suppliers found.</td></tr>';
+        return;
+    }
+    
+    suppliers.forEach(function(s) {
+        var p = purchases.filter(function(x) { return x.supplierId === s.id; });
+        var tp = p.reduce(function(su, x) { return su + x.quantity; }, 0);
+        var tv = (parseFloat(s.openingBalance) || 0) + p.reduce(function(su, x) { return su + x.totalAmount; }, 0);
+        var due = s.balanceDue || 0;
+        var dueClass = due > 0 ? 'text-red-600 font-black' : 'text-zinc-700 font-bold';
 
-        function renderSuppliers() {
-            var tb = document.getElementById('supplierTableBody'); if(!tb) return; tb.innerHTML=''; 
-            if(suppliers.length===0){tb.innerHTML='<tr><td colspan="7" class="text-center p-4">No suppliers</td></tr>';return;}
-            suppliers.forEach(function(s) { 
-                var p = purchases.filter(function(x) { return x.supplierId===s.id; }); 
-                var tp = p.reduce(function(su,x) { return su+x.quantity; }, 0); 
-                var tv = (parseFloat(s.openingBalance)||0) + p.reduce(function(su,x) { return su+x.totalAmount; }, 0); 
-                var d = s.balanceDue||0; var pd = tv-d; 
-                tb.innerHTML += '<tr class="hover:bg-zinc-50 border-b border-zinc-100"><td class="p-2 font-bold">'+s.name+'</td><td class="p-2"><a href="'+getWaLink(s.phone)+'" target="_blank" class="text-emerald-600 font-bold">💬 '+s.phone+'</a></td><td class="p-2 text-right font-black text-amber-600">'+tp+' Pcs</td><td class="p-2 text-right font-bold text-zinc-900">'+currencyFormatter.format(tv)+'</td><td class="p-2 text-right font-bold text-emerald-600">'+currencyFormatter.format(pd>0?pd:0)+'</td><td class="p-2 text-right text-red-600 font-black">'+currencyFormatter.format(d)+'</td><td class="p-2 text-center"><button onclick="viewHistory(\''+s.id+'\',\'SUPP\')" class="px-3 py-1.5 bg-zinc-800 text-white rounded-xl text-xs font-bold shadow">Ledger</button></td></tr>';
-            });
-        }
-
+        tb.innerHTML += '<tr class="hover:bg-zinc-50 border-b border-zinc-100">' +
+            '<td class="p-3 font-bold text-zinc-900 cursor-pointer hover:text-blue-600" onclick="openSupplierLedger(\''+s.id+'\')">' + s.name + '</td>' +
+            '<td class="p-3 text-zinc-600"><a href="'+getWaLink(s.phone)+'" target="_blank" class="text-emerald-600 font-semibold">'+(s.phone || '-')+'</a></td>' +
+            '<td class="p-3 text-right font-semibold">' + tp + '</td>' +
+            '<td class="p-3 text-right font-semibold">' + currencyFormatter.format(tv) + '</td>' +
+            '<td class="p-3 text-right font-semibold text-emerald-600">' + currencyFormatter.format(s.totalPaid || 0) + '</td>' +
+            '<td class="p-3 text-right ' + dueClass + '">' + currencyFormatter.format(due) + '</td>' +
+            '<td class="p-3 text-center space-x-1 whitespace-nowrap">' +
+                '<button type="button" onclick="openEditSupplierModal(\''+s.id+'\')" class="px-2 py-1 bg-zinc-200 text-zinc-700 rounded text-[10px] font-bold hover:bg-zinc-300">Edit</button>' +
+                '<button type="button" onclick="openSupplierLedger(\''+s.id+'\')" class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold hover:bg-emerald-200">Ledger</button>' +
+            '</td>' +
+        '</tr>';
+    });
+}
         function renderPaymentsTab() {
             var tb = document.getElementById('paymentsTableBody'); if(!tb) return; tb.innerHTML=''; 
             var ap=[]; var ti=0, to=0;
