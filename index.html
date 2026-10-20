@@ -3785,7 +3785,7 @@ reader.readAsText(file);
 };
         
 // --- 13. SUPPLIER TABLE RENDER (FLEXIBLE PAYMENT & PAID AMOUNT FIX) ---
-        function renderSupplierTable() {
+function renderSupplierTable() {
             var tbody = document.getElementById('supplierTableBody');
             if(!tbody) return;
             tbody.innerHTML = '';
@@ -3798,14 +3798,24 @@ reader.readAsText(file);
             suppliers.forEach(function(s) {
                 // इस सप्लायर के सभी परचेस बिल
                 var supPurchases = purchases.filter(function(x) { return x.supplierId === s.id; });
-                var tp = supPurchases.reduce(function(su, x) { return su + (x.quantity || 0); }, 0);
-                var tv = (parseFloat(s.openingBalance) || 0) + supPurchases.reduce(function(su, x) { return su + (x.totalAmount || 0); }, 0);
+                var tp = supPurchases.reduce(function(su, x) { return su + (parseInt(x.quantity) || 0); }, 0);
+                var tv = (parseFloat(s.openingBalance) || 0) + supPurchases.reduce(function(su, x) { return su + (parseFloat(x.totalAmount) || parseFloat(x.amount) || 0); }, 0);
                 
-                // --- यहाँ मुख्य सुधार है: बिल वाला पेड + अलग से किया गया पेमेंट (supPayments) दोनों को जोड़ रहे हैं ---
-                var paidFromPurchases = supPurchases.reduce(function(su, x) { return su + (parseFloat(x.amountPaid) || 0); }, 0);
-                var paidFromSupPayments = supPayments.filter(function(p) { return p.supplierId === s.id; }).reduce(function(su, x) { return su + (parseFloat(x.amountPaid) || 0); }, 0);
+                // बिल के साथ दिया गया पेड अमाउंट
+                var paidFromPurchases = supPurchases.reduce(function(su, x) { 
+                    var p = parseFloat(x.amountPaid) || parseFloat(x.amount) || parseFloat(x.paid) || 0;
+                    return su + p; 
+                }, 0);
+                
+                // अलग से दिए गए पेमेंट्स (supPayments) - यहाँ सभी संभव नामों को जोड़ दिया गया है ताकि 0.00 न आए
+                var paidFromSupPayments = supPayments.filter(function(p) { 
+                    return p.supplierId === s.id || p.supId === s.id; 
+                }).reduce(function(su, x) { 
+                    var p = parseFloat(x.amountPaid) || parseFloat(x.amount) || parseFloat(x.paid) || 0;
+                    return su + p; 
+                }, 0);
+                
                 var totalPaidAmt = paidFromPurchases + paidFromSupPayments;
-
                 var due = tv - totalPaidAmt;
                 var dueClass = due > 0 ? 'text-red-600 font-black' : 'text-zinc-700 font-bold';
 
