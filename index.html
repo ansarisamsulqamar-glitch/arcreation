@@ -3852,11 +3852,93 @@ reader.readAsText(file);
             }
         };
         
+        // --- 14. INTERACTIVE CLICKABLE CUSTOMER & SUPPLIER LEDGER (FIXED PAID AMOUNTS) ---
+        window.viewHistory = function(id, t) {
+            var tb = document.getElementById('historyContent');
+            if(!tb) return;
+            tb.innerHTML = '';
+            var tr = [];
+
+            if(t === 'CUST') {
+                var c = customers.find(function(x) { return x.id === id; });
+                if(!c) return;
+                var groupedOrders = {};
+                orders.filter(function(o) { return o.customerId === id; }).forEach(function(o) {
+                    if(!groupedOrders[o.invoiceNo]) {
+                        groupedOrders[o.invoiceNo] = { id: o.id, d: new Date(o.date), rf: o.invoiceNo, nt: 'Sales Invoice', amt: 0, pd: 0, qty: 0, kind: 'SALE' };
+                    }
+                    groupedOrders[o.invoiceNo].amt += (parseFloat(o.totalAmount) || 0);
+                    groupedOrders[o.invoiceNo].pd += (parseFloat(o.amountPaid) || 0);
+                    if(o.itemId !== 'EXTRA_CHARGE') groupedOrders[o.invoiceNo].qty += (parseInt(o.quantity) || 0);
+                });
+                Object.values(groupedOrders).forEach(function(go) { tr.push(go); });
+
+                payments.filter(function(p) { return p.customerId === id; }).forEach(function(p) {
+                    tr.push({ id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Payment Received', amt: 0, pd: parseFloat(p.amountPaid) || 0, qty: 0, kind: 'PAY_IN' });
+                });
+                document.getElementById('historyTitle').innerText = '📒 Customer Ledger: ' + c.name + ' (Due: ' + currencyFormatter.format(c.balanceDue || 0) + ')';
+            } else {
+                var s = suppliers.find(function(x) { return x.id === id; });
+                if(!s) return;
+                
+                var groupedPurchases = {};
+                purchases.filter(function(p) { return p.supplierId === id; }).forEach(function(p) {
+                    if(!groupedPurchases[p.invoiceNo]) {
+                        groupedPurchases[p.invoiceNo] = { id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Purchase Bill', amt: 0, pd: 0, qty: 0, kind: 'PURCHASE' };
+                    }
+                    groupedPurchases[p.invoiceNo].amt += (parseFloat(p.totalAmount) || 0);
+                    groupedPurchases[p.invoiceNo].pd += (parseFloat(p.amountPaid) || 0);
+                    if(p.itemId !== 'EXTRA_CHARGE') groupedPurchases[p.invoiceNo].qty += (parseInt(p.quantity) || 0);
+                });
+                Object.values(groupedPurchases).forEach(function(gp) { tr.push(gp); });
+
+                supPayments.filter(function(p) { return p.supplierId === id; }).forEach(function(p) {
+                    tr.push({ id: p.id, d: new Date(p.date), rf: p.receiptNo || 'PAY-OUT', nt: 'Payment Given (Outward)', amt: 0, pd: parseFloat(p.amountPaid) || 0, qty: 0, kind: 'PAY_OUT' });
+                });
+                
+                document.getElementById('historyTitle').innerText = '📒 Supplier Ledger: ' + s.name + ' (Payable Due: ' + currencyFormatter.format(s.balanceDue || 0) + ')';
+            }
+
+            tr.sort(function(a, b) { return b.d - a.d; });
+
+            var h = '<div class="border rounded-2xl overflow-hidden"><table class="w-full text-left text-xs whitespace-nowrap"><thead class="bg-zinc-100 font-extrabold text-zinc-700"><tr><th class="p-2.5">Date</th><th class="p-2.5">Ref / Bill No</th><th class="p-2.5">Type</th><th class="p-2.5 text-right">Bill Amt</th><th class="p-2.5 text-right">Paid Amount</th><th class="p-2.5 text-center">Actions</th></tr></thead><tbody class="divide-y font-medium">';
+            if(tr.length === 0) {
+                h += '<tr><td colspan="6" class="p-6 text-center text-zinc-400 font-bold">No transactions recorded yet</td></tr>';
+            } else {
+                tr.forEach(function(x) {
+                    var refLink = x.rf;
+                    var actionBtns = '';
+                    if(x.kind === 'SALE') {
+                        refLink = `<button type="button" onclick="viewOrderReceipt('${x.rf}')" class="text-blue-600 hover:text-blue-800 font-black underline">🧾 ${x.rf}</button>`;
+                        actionBtns = `<button type="button" onclick="editSalesInvoice('${x.rf}')" class="px-2 py-1 bg-blue-100 text-blue-700 rounded font-bold">Edit</button>`;
+                    } else if(x.kind === 'PURCHASE') {
+                        refLink = `<button type="button" onclick="viewPurchaseReceipt('${x.rf}')" class="text-emerald-700 hover:text-emerald-900 font-black underline">📥 ${x.rf}</button>`;
+                        actionBtns = `<button type="button" onclick="editPurchaseInvoice('${x.rf}')" class="px-2 py-1 bg-blue-100 text-blue-700 rounded font-bold">Edit</button>`;
+                    } else if(x.kind === 'PAY_IN' || x.kind === 'PAY_OUT') {
+                        refLink = `<span class="font-black text-purple-700">💸 ${x.rf}</span>`;
+                        actionBtns = `<button type="button" onclick="closeHistoryModal(); openGlobalPaymentModal('${x.kind === 'PAY_IN' ? 'IN' : 'OUT'}','${x.id}')" class="px-2 py-1 bg-blue-100 text-blue-700 rounded font-bold">Edit</button>`;
+                    }
+
+                    var qtyBadge = x.qty > 0 ? ` <span class="text-[10px] bg-zinc-100 px-1.5 py-0.5 rounded font-bold text-zinc-600">(${x.qty} Pcs)</span>` : '';
+                    h += `<tr class="hover:bg-zinc-50">
+                        <td class="p-2.5 text-zinc-500">${x.d.toLocaleDateString()}</td>
+                        <td class="p-2.5">${refLink}</td>
+                        <td class="p-2.5 font-bold text-zinc-700">${x.nt}${qtyBadge}</td>
+                        <td class="p-2.5 text-right font-black text-zinc-900">${x.amt > 0 ? currencyFormatter.format(x.amt) : '-'}</td>
+                        <td class="p-2.5 text-right font-black text-emerald-600">${x.pd > 0 ? currencyFormatter.format(x.pd) : '-'}</td>
+                        <td class="p-2.5 text-center space-x-1">${actionBtns}</td>
+                    </tr>`;
+                });
+            }
+            h += '</tbody></table></div>';
+            tb.innerHTML = h;
+            document.getElementById('historyModal').classList.remove('hidden');
+            toggleBodyScroll(true);
+        };
+
         window.openSupplierLedger = function(supId) {
             var sup = suppliers.find(function(s) { return s.id === supId; });
             if (!sup) return alert('Supplier nahi mila!');
-            
-            // सीधे viewHistory फंक्शन को कॉल करें जो पहले से बना हुआ है
             if (typeof viewHistory === 'function') {
                 viewHistory(supId, 'SUPP');
             } else {
@@ -3864,7 +3946,6 @@ reader.readAsText(file);
             }
         };
 
-        // पेज लोड होते ही सप्लायर टेबल को रेंडर करने के लिए
         document.addEventListener('DOMContentLoaded', function() {
             if(typeof renderSupplierTable === 'function') {
                 renderSupplierTable();
@@ -3873,4 +3954,4 @@ reader.readAsText(file);
     </script>
 </body>
 </html>
-        
+
