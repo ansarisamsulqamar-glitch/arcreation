@@ -3783,8 +3783,8 @@ function renderSuppliers() {
 };
 reader.readAsText(file);
 };
-
-// --- इसके तुरंत बाद आपका सप्लायर वाला कोड शुरू होगा ---
+        
+// --- 13. SUPPLIER TABLE RENDER (FLEXIBLE PAYMENT & PAID AMOUNT FIX) ---
         function renderSupplierTable() {
             var tbody = document.getElementById('supplierTableBody');
             if(!tbody) return;
@@ -3796,16 +3796,25 @@ reader.readAsText(file);
             }
             
             suppliers.forEach(function(s) {
-                // इस सप्लायर के सभी परचेस बिल
-                var supPurchases = purchases.filter(function(x) { return x.supplierId === s.id; });
-                var tp = supPurchases.reduce(function(su, x) { return su + (x.quantity || 0); }, 0);
-                var tv = (parseFloat(s.openingBalance) || 0) + supPurchases.reduce(function(su, x) { return su + (x.totalAmount || 0); }, 0);
+                // इस सप्लायर के सभी परचेस बिल (ID या Name से मैच करें)
+                var supPurchases = purchases.filter(function(x) { 
+                    return x.supplierId === s.id || (s.name && x.supplierName && x.supplierName.toLowerCase() === s.name.toLowerCase()); 
+                });
+                var tp = supPurchases.reduce(function(su, x) { return su + (parseInt(x.quantity) || 0); }, 0);
+                var tv = (parseFloat(s.openingBalance) || 0) + supPurchases.reduce(function(su, x) { return su + (parseFloat(x.totalAmount) || parseFloat(x.amount) || 0); }, 0);
                 
-                // इस सप्लायर को कुल कितना पेमेंट दिया गया (बिल पर दिया गया + अलग से दिए गए आउटवर्ड पेमेंट्स)
-                var paidFromPurchases = supPurchases.reduce(function(su, x) { return su + (x.amountPaid || 0); }, 0);
-                var paidFromSupPayments = supPayments.filter(function(p) { return p.supplierId === s.id; }).reduce(function(su, x) { return su + (x.amountPaid || 0); }, 0);
+                // कुल चुकाया गया पैसा (Flexible check: amountPaid, amount, या paid)
+                var paidFromPurchases = supPurchases.reduce(function(su, x) { 
+                    return su + (parseFloat(x.amountPaid) || parseFloat(x.amount) || parseFloat(x.paid) || 0); 
+                }, 0);
+                
+                var paidFromSupPayments = supPayments.filter(function(p) { 
+                    return p.supplierId === s.id || p.supId === s.id || (p.partyName && s.name && p.partyName.toLowerCase() === s.name.toLowerCase()); 
+                }).reduce(function(su, x) { 
+                    return su + (parseFloat(x.amountPaid) || parseFloat(x.amount) || parseFloat(x.paid) || 0); 
+                }, 0);
+                
                 var totalPaidAmt = paidFromPurchases + paidFromSupPayments;
-
                 var due = tv - totalPaidAmt;
                 var dueClass = due > 0 ? 'text-red-600 font-black' : 'text-zinc-700 font-bold';
 
@@ -3823,49 +3832,8 @@ reader.readAsText(file);
                 '</tr>';
             });
         }
-        
-        window.openEditSupplierModal = function(supId) {
-            var sup = suppliers.find(function(s) { return s.id === supId; });
-            if(!sup) return alert('Supplier nahi mila!');
-            
-            document.getElementById('editSupId').value = sup.id;
-            document.getElementById('editSupName').value = sup.name || '';
-            document.getElementById('editSupPhone').value = sup.phone || '';
-            document.getElementById('editSupAddress').value = sup.address || '';
-            
-            var m = document.getElementById('editSupplierModal');
-            if(m) m.classList.remove('hidden');
-            toggleBodyScroll(true);
-        };
 
-        window.closeEditSupplierModal = function() {
-            var m = document.getElementById('editSupplierModal');
-            if(m) m.classList.add('hidden');
-            toggleBodyScroll(false);
-        };
-
-        window.saveSupplierEdit = function() {
-            var supId = document.getElementById('editSupId').value;
-            var newName = document.getElementById('editSupName').value.trim();
-            var newPhone = document.getElementById('editSupPhone').value.trim();
-            var newAddress = document.getElementById('editSupAddress').value.trim();
-            
-            if(!newName) return alert('Supplier ka naam khali nahi ho sakta!');
-            
-            var sup = suppliers.find(function(s) { return s.id === supId; });
-            if(sup) {
-                sup.name = newName;
-                sup.phone = newPhone;
-                sup.address = newAddress;
-                
-                saveData();
-                renderSupplierTable();
-                closeEditSupplierModal();
-                alert('Supplier ki details successfully update ho gayi hain!');
-            }
-        };
-        
-        // --- 14. INTERACTIVE CLICKABLE CUSTOMER & SUPPLIER LEDGER (FIXED PAID AMOUNTS) ---
+        // --- 14. INTERACTIVE CLICKABLE LEDGER (FLEXIBLE PAID AMOUNT FIX) ---
         window.viewHistory = function(id, t) {
             var tb = document.getElementById('historyContent');
             if(!tb) return;
@@ -3881,13 +3849,13 @@ reader.readAsText(file);
                         groupedOrders[o.invoiceNo] = { id: o.id, d: new Date(o.date), rf: o.invoiceNo, nt: 'Sales Invoice', amt: 0, pd: 0, qty: 0, kind: 'SALE' };
                     }
                     groupedOrders[o.invoiceNo].amt += (parseFloat(o.totalAmount) || 0);
-                    groupedOrders[o.invoiceNo].pd += (parseFloat(o.amountPaid) || 0);
+                    groupedOrders[o.invoiceNo].pd += (parseFloat(o.amountPaid) || parseFloat(o.amount) || 0);
                     if(o.itemId !== 'EXTRA_CHARGE') groupedOrders[o.invoiceNo].qty += (parseInt(o.quantity) || 0);
                 });
                 Object.values(groupedOrders).forEach(function(go) { tr.push(go); });
 
                 payments.filter(function(p) { return p.customerId === id; }).forEach(function(p) {
-                    tr.push({ id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Payment Received', amt: 0, pd: parseFloat(p.amountPaid) || 0, qty: 0, kind: 'PAY_IN' });
+                    tr.push({ id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Payment Received', amt: 0, pd: parseFloat(p.amountPaid) || parseFloat(p.amount) || 0, qty: 0, kind: 'PAY_IN' });
                 });
                 document.getElementById('historyTitle').innerText = '📒 Customer Ledger: ' + c.name + ' (Due: ' + currencyFormatter.format(c.balanceDue || 0) + ')';
             } else {
@@ -3895,18 +3863,18 @@ reader.readAsText(file);
                 if(!s) return;
                 
                 var groupedPurchases = {};
-                purchases.filter(function(p) { return p.supplierId === id; }).forEach(function(p) {
+                purchases.filter(function(p) { return p.supplierId === id || (p.supplierName && s.name && p.supplierName.toLowerCase() === s.name.toLowerCase()); }).forEach(function(p) {
                     if(!groupedPurchases[p.invoiceNo]) {
                         groupedPurchases[p.invoiceNo] = { id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Purchase Bill', amt: 0, pd: 0, qty: 0, kind: 'PURCHASE' };
                     }
-                    groupedPurchases[p.invoiceNo].amt += (parseFloat(p.totalAmount) || 0);
-                    groupedPurchases[p.invoiceNo].pd += (parseFloat(p.amountPaid) || 0);
+                    groupedPurchases[p.invoiceNo].amt += (parseFloat(p.totalAmount) || parseFloat(p.amount) || 0);
+                    groupedPurchases[p.invoiceNo].pd += (parseFloat(p.amountPaid) || parseFloat(p.amount) || parseFloat(p.paid) || 0);
                     if(p.itemId !== 'EXTRA_CHARGE') groupedPurchases[p.invoiceNo].qty += (parseInt(p.quantity) || 0);
                 });
                 Object.values(groupedPurchases).forEach(function(gp) { tr.push(gp); });
 
-                supPayments.filter(function(p) { return p.supplierId === id; }).forEach(function(p) {
-                    tr.push({ id: p.id, d: new Date(p.date), rf: p.receiptNo || 'PAY-OUT', nt: 'Payment Given (Outward)', amt: 0, pd: parseFloat(p.amountPaid) || 0, qty: 0, kind: 'PAY_OUT' });
+                supPayments.filter(function(p) { return p.supplierId === id || p.supId === id || (p.partyName && s.name && p.partyName.toLowerCase() === s.name.toLowerCase()); }).forEach(function(p) {
+                    tr.push({ id: p.id, d: new Date(p.date), rf: p.receiptNo || 'PAY-OUT', nt: 'Payment Given (Outward)', amt: 0, pd: parseFloat(p.amountPaid) || parseFloat(p.amount) || parseFloat(p.paid) || 0, qty: 0, kind: 'PAY_OUT' });
                 });
                 
                 document.getElementById('historyTitle').innerText = '📒 Supplier Ledger: ' + s.name + ' (Payable Due: ' + currencyFormatter.format(s.balanceDue || 0) + ')';
@@ -3964,6 +3932,7 @@ reader.readAsText(file);
                 renderSupplierTable();
             }
         });
+        
     </script>
 </body>
 </html>
