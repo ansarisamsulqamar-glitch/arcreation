@@ -3851,6 +3851,7 @@ reader.readAsText(file);
                 alert('Supplier ki details successfully update ho gayi hain!');
             }
         };
+        
         window.openSupplierLedger = function(supId) {
     var sup = suppliers.find(function(s) { return s.id === supId; });
     if (!sup) return alert('Supplier nahi mila!');
@@ -3865,13 +3866,14 @@ reader.readAsText(file);
         renderSupplierLedgerDetails(supId);
     }
 };
-        // पेज लोड होते ही सप्लायर टेबल को रेंडर करने के लिए
+
+// पेज लोड होते ही सप्लायर टेबल को रेंडर करने के लिए
 document.addEventListener('DOMContentLoaded', function() {
     if(typeof renderSupplierTable === 'function') {
         renderSupplierTable();
     }
 });
-        
 </script>
 </body>
 </html>
+        
