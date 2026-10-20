@@ -3856,11 +3856,11 @@ reader.readAsText(file);
             var sup = suppliers.find(function(s) { return s.id === supId; });
             if (!sup) return alert('Supplier nahi mila!');
             
-            // सीधे प्रोजेक्ट के मुख्य लेजर हिस्ट्री मॉडल का उपयोग करें
+            // सीधे viewHistory फंक्शन को कॉल करें जो पहले से बना हुआ है
             if (typeof viewHistory === 'function') {
                 viewHistory(supId, 'SUPP');
             } else {
-                alert('Ledger history viewer not found!');
+                alert('Ledger viewer function not found!');
             }
         };
 
