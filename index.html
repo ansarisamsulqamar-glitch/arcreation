@@ -3588,7 +3588,7 @@
             document.body.removeChild(a);
         };
 
-        window.processPurchaseCSVImport = function() {
+       window.processPurchaseCSVImport = function() {
             var fileInput = document.getElementById('csvPurchaseFileInput');
             if(!fileInput || !fileInput.files[0]) return alert('कृपया पहले CSV फाइल चुनें!');
             
@@ -3597,8 +3597,10 @@
             
             reader.onload = function(e) {
                 var lines = e.target.result.split('\n');
-                var importedCount = 0;
+                var importedBillsCount = 0;
+                var billGroups = {}; // एक ही बिल के सभी आइटम्स को एक साथ ग्रुप करने के लिए
                 
+                // 1. पहले सभी लाइनों को बिल नंबर के हिसाब से ग्रुप करें
                 for(var i = 1; i < lines.length; i++) {
                     var row = lines[i].trim();
                     if(!row) continue;
@@ -3606,81 +3608,125 @@
                     var cols = row.split(',');
                     if(cols.length >= 11) {
                         var billNo = cols[0].trim();
-                        var dateVal = cols[1].trim() ? new Date(cols[1].trim()).toISOString() : new Date().toISOString();
-                        var supName = cols[2].trim();
-                        var supPhone = cols[3].trim() || '0000000000';
-                        var sku = cols[4].trim();
-                        var itemName = cols[5].trim();
-                        var nature = cols[6].trim() || 'Raw Material';
-                        var category = cols[7].trim() || 'Fabrics';
-                        var qty = parseFloat(cols[8]) || 0; // parseFloat से अब पॉइंट में भी (जैसे 125.50 Meters) क्वांटिटी आएगी
-                        var buyCost = parseFloat(cols[9]) || 0;
-                        var sellPrice = parseFloat(cols[10]) || buyCost;
-                        var amountPaid = parseFloat(cols[11]) || 0;
-                        
-                        if(billNo && supName && sku && itemName && qty > 0) {
-                            var supObj = suppliers.find(function(s) { return s.name.toLowerCase() === supName.toLowerCase(); });
-                            if(!supObj) {
-                                supObj = {
-                                    id: '_' + Math.random().toString(36).substr(2, 9),
-                                    name: supName,
-                                    phone: supPhone,
-                                    address: 'LOCAL',
-                                    openingBalance: 0,
-                                    balanceDue: 0
-                                };
-                                suppliers.push(supObj);
-                            }
-                            
-                            var prodObj = inventory.find(function(item) { return item.sku.toLowerCase() === sku.toLowerCase(); });
+                        if(!billGroups[billNo]) {
+                            billGroups[billNo] = {
+                                billNo: billNo,
+                                date: cols[1].trim() ? new Date(cols[1].trim()).toISOString() : new Date().toISOString(),
+                                supName: cols[2].trim(),
+                                supPhone: cols[3].trim() || '0000000000',
+                                amountPaid: parseFloat(cols[11]) || 0,
+                                extraCharge: cols[12] ? (parseFloat(cols[12]) || 0) : 0,
+                                items: []
+                            };
+                        }
+                        billGroups[billNo].items.push({
+                            sku: cols[4].trim(),
+                            itemName: cols[5].trim(),
+                            nature: cols[6].trim() || 'Raw Material',
+                            category: cols[7].trim() || 'Fabrics',
+                            qty: parseFloat(cols[8]) || 0,
+                            buyCost: parseFloat(cols[9]) || 0,
+                            sellPrice: parseFloat(cols[10]) || parseFloat(cols[9]) || 0
+                        });
+                    }
+                }
+                
+                // 2. अब हर बिल को प्रोसेस करें
+                Object.values(billGroups).forEach(function(bill) {
+                    var supObj = suppliers.find(function(s) { return s.name.toLowerCase() === bill.supName.toLowerCase(); });
+                    if(!supObj) {
+                        supObj = {
+                            id: '_' + Math.random().toString(36).substr(2, 9),
+                            name: bill.supName,
+                            phone: bill.supPhone,
+                            address: 'LOCAL',
+                            openingBalance: 0,
+                            balanceDue: 0
+                        };
+                        suppliers.push(supObj);
+                    }
+                    
+                    var currentBillItemsTotal = 0;
+                    
+                    // बिल के हर आइटम के लिए स्टॉक और परचेस एंट्री बनाएं
+                    bill.items.forEach(function(it) {
+                        if(it.sku && it.itemName && it.qty > 0) {
+                            var prodObj = inventory.find(function(item) { return item.sku.toLowerCase() === it.sku.toLowerCase(); });
                             if(!prodObj) {
                                 prodObj = {
                                     id: '_' + Math.random().toString(36).substr(2, 9),
                                     image: '',
-                                    nature: nature,
-                                    sku: sku,
-                                    name: itemName,
-                                    category: category,
+                                    nature: it.nature,
+                                    sku: it.sku,
+                                    name: it.itemName,
+                                    category: it.category,
                                     quantity: 0,
-                                    cost: buyCost,
-                                    price: sellPrice,
+                                    cost: it.buyCost,
+                                    price: it.sellPrice,
                                     soldCount: 0
                                 };
                                 inventory.push(prodObj);
-                                if(nature === 'Raw Material') { if(!rawCategories.includes(category)) rawCategories.push(category); }
-                                else { if(!readyCategories.includes(category)) readyCategories.push(category); }
+                                if(it.nature === 'Raw Material') { if(!rawCategories.includes(it.category)) rawCategories.push(it.category); }
+                                else { if(!readyCategories.includes(it.category)) readyCategories.push(it.category); }
                             } else {
-                                prodObj.quantity += qty;
-                                prodObj.cost = buyCost;
-                                prodObj.price = sellPrice;
+                                prodObj.quantity += it.qty;
+                                prodObj.cost = it.buyCost;
+                                prodObj.price = it.sellPrice;
                             }
                             
-                            var totalAmount = qty * buyCost;
-                            supObj.balanceDue = (supObj.balanceDue || 0) + (totalAmount - amountPaid);
+                            var rowTotal = it.qty * it.buyCost;
+                            currentBillItemsTotal += rowTotal;
                             
                             purchases.push({
                                 id: '_' + Math.random().toString(36).substr(2, 9),
-                                invoiceNo: billNo,
+                                invoiceNo: bill.billNo,
                                 supplierId: supObj.id,
                                 itemId: prodObj.id,
-                                quantity: qty,
-                                costPrice: buyCost,
-                                totalAmount: totalAmount,
-                                amountPaid: amountPaid,
-                                date: dateVal
+                                quantity: it.qty,
+                                costPrice: it.buyCost,
+                                totalAmount: rowTotal,
+                                amountPaid: 0, // भुगतान को अलग से मैनेज किया जाएगा
+                                date: bill.date
                             });
-                            
-                            importedCount++;
                         }
+                    });
+                    
+                    var grandBillTotal = currentBillItemsTotal + bill.extraCharge;
+                    
+                    // अगर भाड़ा (Extra Charge) है, तो उसकी एंट्री जोड़ें
+                    if(bill.extraCharge > 0) {
+                        purchases.push({
+                            id: '_' + Math.random().toString(36).substr(2, 9),
+                            invoiceNo: bill.billNo,
+                            supplierId: supObj.id,
+                            itemId: 'EXTRA_CHARGE',
+                            extraLabel: 'Transport / भाड़ा',
+                            quantity: 0,
+                            costPrice: bill.extraCharge,
+                            totalAmount: bill.extraCharge,
+                            amountPaid: 0,
+                            date: bill.date
+                        });
                     }
-                }
+                    
+                    // सप्लायर के पहले आइटम पर कुल पैड अमाउंट असाइन करें ताकि लेजर में सही दिखे
+                    if(bill.amountPaid > 0) {
+                        var firstPur = purchases.find(function(p) { return p.invoiceNo === bill.billNo; });
+                        if(firstPur) firstPur.amountPaid = bill.amountPaid;
+                    }
+                    
+                    // सप्लायर का बकाया (Due) अपडेट करें
+                    supObj.balanceDue = (supObj.balanceDue || 0) + (grandBillTotal - bill.amountPaid);
+                    importedBillsCount++;
+                });
                 
                 saveData();
                 closeBulkPurchaseModal();
-                alert('सفलतापूर्वक ' + importedCount + ' परचेस बिल (मीटर्स सहित) अपलोड हो गए हैं! स्टॉक और लेजर अपडेट हो गया है।');
-           };
-    reader.readAsText(file);
-};
+                alert('सफलतापूर्वक ' + importedBillsCount + ' मल्टी-आइटम परचेस बिल अपलोड हो गए हैं!');
+            };
+            
+            reader.readAsText(file);
+        };
 </script>
 </body>
 </html>
