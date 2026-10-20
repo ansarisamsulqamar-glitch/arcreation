@@ -1532,15 +1532,16 @@
             renderInventoryTable(res); 
         }
 
-        function renderInventoryTable(data) {
+       function renderInventoryTable(data) {
             var tbody = document.getElementById('inventoryTableBody'); if(!tbody) return; tbody.innerHTML = '';
             if(data.length === 0) { tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-zinc-400 font-semibold">No items found.</td></tr>'; return; }
             data.forEach(function(item) {
                 var safeName = (item.name || '').replace(/'/g, "\\'");
                 var imgTag = item.image ? '<img src="'+item.image+'" class="w-10 h-10 object-cover rounded-lg border cursor-pointer hover:opacity-80 transition-opacity shadow-sm" onclick="openImageZoom(\''+item.image+'\', \''+safeName+'\')">' : '<span class="text-[10px] text-zinc-400 bg-zinc-100 px-2 py-1 rounded">No Photo</span>';
                 var natureBadge = item.nature === 'Raw Material' ? '<span class="px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded text-[9px] font-black uppercase inline-block mt-1">Raw Mat.</span>' : '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-800 rounded text-[9px] font-black uppercase inline-block mt-1">Ready</span>';
+                var unitLabel = (item.nature === 'Raw Material') ? ' Mtrs' : ' Pcs';
                 var qtyColor = item.quantity < 10 ? 'text-red-600' : 'text-emerald-600';
-                tbody.innerHTML += '<tr class="hover:bg-zinc-50/80 transition-colors border-b border-zinc-50"><td class="p-2">'+imgTag+'</td><td class="p-2 font-bold text-zinc-900">'+item.sku+'</td><td class="p-2 text-zinc-900 font-bold whitespace-normal min-w-[120px] leading-tight">'+item.name+' <br> '+natureBadge+'</td><td class="p-2 font-bold text-zinc-600">'+item.category+'</td><td class="p-2 text-right font-semibold">'+currencyFormatter.format(item.cost)+'</td><td class="p-2 text-right font-extrabold text-red-600">'+currencyFormatter.format(item.price)+'</td><td class="p-2 text-right font-black '+qtyColor+'">'+item.quantity+'</td><td class="p-2 text-center space-x-1 whitespace-nowrap"><button onclick="openPurchaseModal(\''+item.id+'\')" class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">Buy</button><button onclick="openSellModal(\''+item.id+'\')" class="px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold">Sell</button><button onclick="editProduct(\''+item.id+'\')" class="px-2 py-1 bg-zinc-200 text-zinc-700 rounded text-[10px] font-bold">Edit</button></td></tr>';
+                tbody.innerHTML += '<tr class="hover:bg-zinc-50/80 transition-colors border-b border-zinc-50"><td class="p-2">'+imgTag+'</td><td class="p-2 font-bold text-zinc-900">'+item.sku+'</td><td class="p-2 text-zinc-900 font-bold whitespace-normal min-w-[120px] leading-tight">'+item.name+' <br> '+natureBadge+'</td><td class="p-2 font-bold text-zinc-600">'+item.category+'</td><td class="p-2 text-right font-semibold">'+currencyFormatter.format(item.cost)+'</td><td class="p-2 text-right font-extrabold text-red-600">'+currencyFormatter.format(item.price)+'</td><td class="p-2 text-right font-black '+qtyColor+'">'+item.quantity + unitLabel+'</td><td class="p-2 text-center space-x-1 whitespace-nowrap"><button onclick="openPurchaseModal(\''+item.id+'\')" class="px-2 py-1 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">Buy</button><button onclick="openSellModal(\''+item.id+'\')" class="px-2 py-1 bg-red-100 text-red-700 rounded text-[10px] font-bold">Sell</button><button onclick="editProduct(\''+item.id+'\')" class="px-2 py-1 bg-zinc-200 text-zinc-700 rounded text-[10px] font-bold">Edit</button></td></tr>';
             });
         }
 
