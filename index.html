@@ -3574,9 +3574,10 @@
         };
 
         window.downloadPurchaseCSVTemplate = function() {
-            var csvContent = "bill_no,date,supplier_name,supplier_phone,item_sku,item_name,nature,category,quantity,buy_cost,sell_price,amount_paid\n" +
-                             "BILL-MTR-01,2026-10-20,Al-Madina Fabrics,9876543210,FAB-RY-01,Rayon Batik Fabric (Meters),Raw Material,Fabrics,125.50,120,200,5000\n" +
-                             "BILL-MTR-02,2026-10-20,Zoya Prints,9123456789,FAB-COT-02,Cotton Printed Fabric,Raw Material,Fabrics,250.00,90,150,10000";
+            var csvContent = "bill_no,date,supplier_name,supplier_phone,item_sku,item_name,nature,category,quantity,buy_cost,sell_price,amount_paid,extra_charge\n" +
+                             "BILL-001,2026-10-20,Al-Madina Fabrics,9876543210,FAB-01,Rayon Fabric,Raw Material,Fabrics,100,120,200,5000,200\n" +
+                             "BILL-002,2026-10-20,Zoya Apparels,9123456789,KAF-01,Designer Kaftan,Ready Stock,Kaftans,50,350,650,10000,0\n" +
+                             "BILL-002,2026-10-20,Zoya Apparels,9123456789,KAF-02,Cotton Kaftan,Ready Stock,Kaftans,30,300,600,0,0";
             
             var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             var url = URL.createObjectURL(blob);
