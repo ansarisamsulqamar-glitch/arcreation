@@ -816,7 +816,7 @@
 
     <!-- Detailed Ledger History Modal -->
     <div id="historyModal" class="fixed inset-0 bg-zinc-950/80 backdrop-blur-sm z-50 hidden flex items-end md:items-center justify-center p-0 md:p-4">
-        <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl w-full max-w-3xl p-4 md:p-6 h-[85vh] md:h-auto md:max-h-[90vh] flex flex-col border-t">
+        <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl w-full max-w-6xl p-4 md:p-6 h-[85vh] md:h-auto md:max-h-[90vh] flex flex-col border-t">
             <div class="flex justify-between items-start mb-4 shrink-0"><h3 class="text-base md:text-xl font-extrabold" id="historyTitle">Detailed Ledger</h3><button onclick="closeHistoryModal()" class="text-zinc-500 font-black text-2xl">✕</button></div>
             <div id="historyContent" class="space-y-4 text-sm overflow-y-auto flex-1 pb-10 md:pb-0"></div>
         </div>
@@ -3454,86 +3454,195 @@
             if(!tb) return;
             tb.innerHTML = '';
             var tr = [];
+            var totalQtyOrMeters = 0;
+            var totalBillAmt = 0;
+            var totalPaidAmt = 0;
+            var currentBalanceDue = 0;
+            var openingBal = 0;
+            var openPcs = 0;
+            var openPur = 0;
 
             if(t === 'CUST') {
                 var c = customers.find(function(x) { return x.id === id; });
                 if(!c) return;
-                // Group multi-item sales by invoiceNo so each Invoice shows as 1 clean row in Ledger
+                openingBal = parseFloat(c.openingBalance) || 0;
+                currentBalanceDue = parseFloat(c.balanceDue) || 0;
+                openPcs = parseFloat(c.openingPieces) || 0;
+                openPur = parseFloat(c.openingTotalPurchase) || 0;
+                totalQtyOrMeters += openPcs;
+                totalBillAmt += openPur;
+
                 var groupedOrders = {};
                 orders.filter(function(o) { return o.customerId === id; }).forEach(function(o) {
                     if(!groupedOrders[o.invoiceNo]) {
                         groupedOrders[o.invoiceNo] = { id: o.id, d: new Date(o.date), rf: o.invoiceNo, nt: 'Sales Invoice', amt: 0, pd: 0, qty: 0, kind: 'SALE' };
                     }
-                    groupedOrders[o.invoiceNo].amt += (parseFloat(o.totalAmount) || 0);
-                    groupedOrders[o.invoiceNo].pd += (parseFloat(o.amountPaid) || 0);
-                    if(o.itemId !== 'EXTRA_CHARGE') groupedOrders[o.invoiceNo].qty += (parseInt(o.quantity) || 0);
+                    var rAmt = parseFloat(o.totalAmount) || 0;
+                    var rPd = parseFloat(o.amountPaid) || 0;
+                    var rQty = (o.itemId !== 'EXTRA_CHARGE') ? (parseFloat(o.quantity) || 0) : 0;
+                    groupedOrders[o.invoiceNo].amt += rAmt;
+                    groupedOrders[o.invoiceNo].pd += rPd;
+                    groupedOrders[o.invoiceNo].qty += rQty;
+
+                    totalQtyOrMeters += rQty;
+                    totalBillAmt += rAmt;
+                    totalPaidAmt += rPd;
                 });
                 Object.values(groupedOrders).forEach(function(go) { tr.push(go); });
 
                 payments.filter(function(p) { return p.customerId === id; }).forEach(function(p) {
-                    tr.push({ id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Payment Received', amt: 0, pd: parseFloat(p.amountPaid) || 0, qty: 0, kind: 'PAY_IN' });
+                    var pAmt = parseFloat(p.amountPaid) || 0;
+                    totalPaidAmt += pAmt;
+                    tr.push({ id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Payment Received', amt: 0, pd: pAmt, qty: 0, kind: 'PAY_IN' });
                 });
-                document.getElementById('historyTitle').innerText = '📒 Customer Ledger: ' + c.name + ' (Due: ' + currencyFormatter.format(c.balanceDue || 0) + ')';
+                document.getElementById('historyTitle').innerText = '📒 Customer Ledger: ' + c.name;
             } else {
                 var s = suppliers.find(function(x) { return x.id === id; });
                 if(!s) return;
-                // Group multi-item purchases by invoiceNo
+                openingBal = parseFloat(s.openingBalance) || 0;
+                currentBalanceDue = parseFloat(s.balanceDue) || 0;
+                openPur = openingBal;
+                totalBillAmt += openingBal;
+
                 var groupedPurchases = {};
                 purchases.filter(function(p) { return p.supplierId === id; }).forEach(function(p) {
                     if(!groupedPurchases[p.invoiceNo]) {
                         groupedPurchases[p.invoiceNo] = { id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Purchase Bill', amt: 0, pd: 0, qty: 0, kind: 'PURCHASE' };
                     }
-                    groupedPurchases[p.invoiceNo].amt += (parseFloat(p.totalAmount) || 0);
-                    groupedPurchases[p.invoiceNo].pd += (parseFloat(p.amountPaid) || 0);
-                    if(p.itemId !== 'EXTRA_CHARGE') groupedPurchases[p.invoiceNo].qty += (parseInt(p.quantity) || 0);
+                    var rAmt = parseFloat(p.totalAmount) || 0;
+                    var rPd = parseFloat(p.amountPaid) || 0;
+                    var rQty = (p.itemId !== 'EXTRA_CHARGE') ? (parseFloat(p.quantity) || 0) : 0;
+                    groupedPurchases[p.invoiceNo].amt += rAmt;
+                    groupedPurchases[p.invoiceNo].pd += rPd;
+                    groupedPurchases[p.invoiceNo].qty += rQty;
+
+                    totalQtyOrMeters += rQty;
+                    totalBillAmt += rAmt;
+                    totalPaidAmt += rPd;
                 });
                 Object.values(groupedPurchases).forEach(function(gp) { tr.push(gp); });
 
                 supPayments.filter(function(p) { return p.supplierId === id; }).forEach(function(p) {
-                    tr.push({ id: p.id, d: new Date(p.date), rf: p.receiptNo, nt: 'Payment Given', amt: 0, pd: parseFloat(p.amountPaid) || 0, qty: 0, kind: 'PAY_OUT' });
+                    var pAmt = parseFloat(p.amountPaid) || 0;
+                    totalPaidAmt += pAmt;
+                    tr.push({ id: p.id, d: new Date(p.date), rf: p.receiptNo, nt: 'Payment Given', amt: 0, pd: pAmt, qty: 0, kind: 'PAY_OUT' });
                 });
-                document.getElementById('historyTitle').innerText = '📒 Supplier Ledger: ' + s.name + ' (Payable: ' + currencyFormatter.format(s.balanceDue || 0) + ')';
+                document.getElementById('historyTitle').innerText = '📒 Supplier Ledger: ' + s.name;
             }
 
-            tr.sort(function(a, b) { return b.d - a.d; });
+            // Sort chronologically (oldest to newest) to calculate running stats per row at that point in time
+            tr.sort(function(a, b) { return a.d - b.d; });
+            var runningBal = openingBal;
+            var runningQty = openPcs;
+            var runningAmt = openPur;
+            var runningPaid = 0;
 
-            var h = '<div class="border rounded-2xl overflow-hidden"><table class="w-full text-left text-xs whitespace-nowrap"><thead class="bg-zinc-100 font-extrabold text-zinc-700"><tr><th class="p-2.5">Date</th><th class="p-2.5">Ref / Bill No (Click to Open)</th><th class="p-2.5">Type</th><th class="p-2.5 text-right">Bill Amt</th><th class="p-2.5 text-right">Paid</th><th class="p-2.5 text-center">Actions</th></tr></thead><tbody class="divide-y font-medium">';
+            tr.forEach(function(x) {
+                runningQty += (x.qty || 0);
+                runningAmt += (x.amt || 0);
+                runningPaid += (x.pd || 0);
+                runningBal += (x.amt - x.pd);
+
+                x.totQty = runningQty;
+                x.totAmt = runningAmt;
+                x.totPaid = runningPaid;
+                x.bal = runningBal;
+            });
+
+            // Reverse so latest transactions appear at the top
+            tr.reverse();
+
+            var billTypeLabel = (t === 'CUST') ? 'Total Sales Amount' : 'Total Purchase Amount';
+            var colAmtLabel = (t === 'CUST') ? 'Sales Amt' : 'Purchase Amt';
+            var cumAmtLabel = (t === 'CUST') ? 'Total Sales Amt' : 'Total Purchase Amt';
+
+            var h = '<div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">' +
+                '<div class="bg-amber-50 border border-amber-200 p-3 rounded-2xl">' +
+                    '<p class="text-[10px] font-bold uppercase text-amber-700">Total Qty / Meters</p>' +
+                    '<p class="text-base sm:text-lg font-black text-amber-900 mt-0.5">' + totalQtyOrMeters + ' <span class="text-xs font-bold">Pcs/Mtr</span></p>' +
+                '</div>' +
+                '<div class="bg-blue-50 border border-blue-200 p-3 rounded-2xl">' +
+                    '<p class="text-[10px] font-bold uppercase text-blue-700">' + billTypeLabel + '</p>' +
+                    '<p class="text-base sm:text-lg font-black text-blue-900 mt-0.5">' + currencyFormatter.format(totalBillAmt) + '</p>' +
+                '</div>' +
+                '<div class="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl">' +
+                    '<p class="text-[10px] font-bold uppercase text-emerald-700">Total Amt Paid</p>' +
+                    '<p class="text-base sm:text-lg font-black text-emerald-700 mt-0.5">' + currencyFormatter.format(totalPaidAmt) + '</p>' +
+                '</div>' +
+                '<div class="bg-red-50 border border-red-200 p-3 rounded-2xl">' +
+                    '<p class="text-[10px] font-bold uppercase text-red-700">Balance Due</p>' +
+                    '<p class="text-base sm:text-lg font-black text-red-600 mt-0.5">' + currencyFormatter.format(currentBalanceDue) + '</p>' +
+                '</div>' +
+            '</div>';
+
+            h += '<div class="border rounded-2xl overflow-x-auto table-container"><table class="w-full text-left text-[11px] whitespace-nowrap min-w-[950px]"><thead class="bg-zinc-100 font-extrabold text-zinc-700 border-b"><tr>' +
+                '<th class="p-2">Date & Time</th>' +
+                '<th class="p-2">Ref / Bill No</th>' +
+                '<th class="p-2">Type</th>' +
+                '<th class="p-2 text-center">Bill Qty/Mtr</th>' +
+                '<th class="p-2 text-center bg-amber-50 text-amber-900 border-x border-amber-200">Total Qty & Meters</th>' +
+                '<th class="p-2 text-right">' + colAmtLabel + '</th>' +
+                '<th class="p-2 text-right bg-blue-50 text-blue-900 border-x border-blue-200">' + cumAmtLabel + '</th>' +
+                '<th class="p-2 text-right">Paid</th>' +
+                '<th class="p-2 text-right bg-emerald-50 text-emerald-900 border-x border-emerald-200">Total Amt Paid</th>' +
+                '<th class="p-2 text-right bg-red-50 text-red-900">Balance Due</th>' +
+                '<th class="p-2 text-center">Actions</th>' +
+                '</tr></thead><tbody class="divide-y font-medium">';
+
             if(tr.length === 0) {
-                h += '<tr><td colspan="6" class="p-6 text-center text-zinc-400 font-bold">No transactions recorded yet</td></tr>';
+                h += '<tr><td colspan="11" class="p-6 text-center text-zinc-400 font-bold">No transactions recorded yet</td></tr>';
             } else {
                 tr.forEach(function(x) {
                     var refLink = '';
                     var actionBtns = '';
                     if(x.kind === 'SALE') {
-                        refLink = `<button type="button" onclick="viewOrderReceipt('${x.rf}')" class="text-blue-600 hover:text-blue-800 font-black underline flex items-center gap-1">🧾 ${x.rf}</button>`;
-                        actionBtns = `<button type="button" onclick="viewOrderReceipt('${x.rf}')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded font-bold">View</button>
-                                      <button type="button" onclick="editSalesInvoice('${x.rf}')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold">Edit</button>`;
+                        refLink = '<button type="button" onclick="viewOrderReceipt(\'' + x.rf + '\')" class="text-blue-600 hover:text-blue-800 font-black underline flex items-center gap-1">🧾 ' + x.rf + '</button>';
+                        actionBtns = '<button type="button" onclick="viewOrderReceipt(\'' + x.rf + '\')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded font-bold">View</button> ' +
+                                     '<button type="button" onclick="editSalesInvoice(\'' + x.rf + '\')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold">Edit</button>';
                     } else if(x.kind === 'PURCHASE') {
-                        refLink = `<button type="button" onclick="viewPurchaseReceipt('${x.rf}')" class="text-emerald-700 hover:text-emerald-900 font-black underline flex items-center gap-1">📥 ${x.rf}</button>`;
-                        actionBtns = `<button type="button" onclick="viewPurchaseReceipt('${x.rf}')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded font-bold">View</button>
-                                      <button type="button" onclick="editPurchaseInvoice('${x.rf}')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold">Edit</button>`;
+                        refLink = '<button type="button" onclick="viewPurchaseReceipt(\'' + x.rf + '\')" class="text-emerald-700 hover:text-emerald-900 font-black underline flex items-center gap-1">📥 ' + x.rf + '</button>';
+                        actionBtns = '<button type="button" onclick="viewPurchaseReceipt(\'' + x.rf + '\')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded font-bold">View</button> ' +
+                                     '<button type="button" onclick="editPurchaseInvoice(\'' + x.rf + '\')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold">Edit</button>';
                     } else if(x.kind === 'PAY_IN') {
-                        refLink = `<button type="button" onclick="printGlobalPayment('${x.id}','IN')" class="text-amber-700 hover:text-amber-900 font-black underline flex items-center gap-1">💳 ${x.rf}</button>`;
-                        actionBtns = `<button type="button" onclick="printGlobalPayment('${x.id}','IN')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded font-bold">Receipt</button>
-                                      <button type="button" onclick="closeHistoryModal(); openGlobalPaymentModal('IN','${x.id}')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold">Edit</button>`;
+                        refLink = '<button type="button" onclick="printGlobalPayment(\'' + x.id + '\',\'IN\')" class="text-amber-700 hover:text-amber-900 font-black underline flex items-center gap-1">💳 ' + x.rf + '</button>';
+                        actionBtns = '<button type="button" onclick="printGlobalPayment(\'' + x.id + '\',\'IN\')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded font-bold">Receipt</button> ' +
+                                     '<button type="button" onclick="closeHistoryModal(); openGlobalPaymentModal(\'IN\',\'' + x.id + '\')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold">Edit</button>';
                     } else if(x.kind === 'PAY_OUT') {
-                        refLink = `<button type="button" onclick="printGlobalPayment('${x.id}','OUT')" class="text-purple-700 hover:text-purple-900 font-black underline flex items-center gap-1">💸 ${x.rf}</button>`;
-                        actionBtns = `<button type="button" onclick="printGlobalPayment('${x.id}','OUT')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded font-bold">Receipt</button>
-                                      <button type="button" onclick="closeHistoryModal(); openGlobalPaymentModal('OUT','${x.id}')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold">Edit</button>`;
+                        refLink = '<button type="button" onclick="printGlobalPayment(\'' + x.id + '\',\'OUT\')" class="text-purple-700 hover:text-purple-900 font-black underline flex items-center gap-1">💸 ' + x.rf + '</button>';
+                        actionBtns = '<button type="button" onclick="printGlobalPayment(\'' + x.id + '\',\'OUT\')" class="px-2 py-1 bg-zinc-200 hover:bg-zinc-300 text-zinc-800 rounded font-bold">Receipt</button> ' +
+                                     '<button type="button" onclick="closeHistoryModal(); openGlobalPaymentModal(\'OUT\',\'' + x.id + '\')" class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded font-bold">Edit</button>';
                     }
 
-                    var qtyBadge = x.qty > 0 ? ` <span class="text-[10px] bg-zinc-100 px-1.5 py-0.5 rounded font-bold text-zinc-600">(${x.qty} Pcs)</span>` : '';
-                    h += `<tr class="hover:bg-zinc-50">
-                        <td class="p-2.5 text-zinc-500">${x.d.toLocaleDateString()}</td>
-                        <td class="p-2.5">${refLink}</td>
-                        <td class="p-2.5 font-bold text-zinc-700">${x.nt}${qtyBadge}</td>
-                        <td class="p-2.5 text-right font-black text-zinc-900">${x.amt > 0 ? currencyFormatter.format(x.amt) : '-'}</td>
-                        <td class="p-2.5 text-right font-black text-emerald-600">${x.pd > 0 ? currencyFormatter.format(x.pd) : '-'}</td>
-                        <td class="p-2.5 text-center space-x-1">${actionBtns}</td>
-                    </tr>`;
+                    var qtyColText = x.qty > 0 ? '<span class="px-1.5 py-0.5 bg-zinc-100 text-zinc-800 rounded font-bold">' + x.qty + '</span>' : '-';
+                    var balColor = x.bal > 0 ? 'text-red-600' : 'text-emerald-600';
+                    var dateTimeStr = x.d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' <span class="text-[9px] text-zinc-400">' + x.d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '</span>';
+
+                    h += '<tr class="hover:bg-zinc-50 border-b border-zinc-100">' +
+                        '<td class="p-2 text-zinc-600 font-semibold">' + dateTimeStr + '</td>' +
+                        '<td class="p-2">' + refLink + '</td>' +
+                        '<td class="p-2 font-bold text-zinc-700">' + x.nt + '</td>' +
+                        '<td class="p-2 text-center font-bold">' + qtyColText + '</td>' +
+                        '<td class="p-2 text-center font-black text-amber-800 bg-amber-50/40 border-x border-amber-100">' + x.totQty + ' Pcs/Mtr</td>' +
+                        '<td class="p-2 text-right font-bold text-zinc-800">' + (x.amt > 0 ? currencyFormatter.format(x.amt) : '-') + '</td>' +
+                        '<td class="p-2 text-right font-black text-blue-800 bg-blue-50/40 border-x border-blue-100">' + currencyFormatter.format(x.totAmt) + '</td>' +
+                        '<td class="p-2 text-right font-bold text-emerald-600">' + (x.pd > 0 ? currencyFormatter.format(x.pd) : '-') + '</td>' +
+                        '<td class="p-2 text-right font-black text-emerald-800 bg-emerald-50/40 border-x border-emerald-100">' + currencyFormatter.format(x.totPaid) + '</td>' +
+                        '<td class="p-2 text-right font-black bg-red-50/30 ' + balColor + '">' + currencyFormatter.format(x.bal) + '</td>' +
+                        '<td class="p-2 text-center space-x-1 whitespace-nowrap">' + actionBtns + '</td>' +
+                    '</tr>';
                 });
             }
-            h += '</tbody></table></div>';
+            h += '</tbody><tfoot class="bg-zinc-900 text-white font-black text-xs"><tr>' +
+                '<td colspan="3" class="p-2.5 text-right uppercase tracking-wider text-zinc-300">Final Totals:</td>' +
+                '<td class="p-2.5 text-center text-zinc-400">-</td>' +
+                '<td class="p-2.5 text-center text-yellow-400">' + totalQtyOrMeters + ' Pcs/Mtr</td>' +
+                '<td class="p-2.5 text-right text-zinc-400">-</td>' +
+                '<td class="p-2.5 text-right text-blue-300">' + currencyFormatter.format(totalBillAmt) + '</td>' +
+                '<td class="p-2.5 text-right text-zinc-400">-</td>' +
+                '<td class="p-2.5 text-right text-emerald-400">' + currencyFormatter.format(totalPaidAmt) + '</td>' +
+                '<td class="p-2.5 text-right text-red-400">' + currencyFormatter.format(currentBalanceDue) + '</td>' +
+                '<td class="p-2.5"></td>' +
+            '</tr></tfoot></table></div>';
             tb.innerHTML = h;
             document.getElementById('historyModal').classList.remove('hidden');
             toggleBodyScroll(true);
