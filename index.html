@@ -1952,15 +1952,15 @@
                 if(mTitle) mTitle.innerText="Edit Payment"; 
                 if((t||'IN')==='IN'){ 
                     var p=payments.find(function(x) { return x.id===id; }); 
-                    if(p){if(gepEl) gepEl.value=p.customerId; if(geaEl) geaEl.value=p.amountPaid; if(goaEl) goaEl.value=p.amountPaid; if(gedEl) gedEl.value=p.date.split('T')[0];} 
+                    if(p){if(gepEl) gepEl.value=p.customerId; if(geaEl) geaEl.value=p.amountPaid; if(goaEl) goaEl.value=p.amountPaid; if(gedEl) gedEl.value=window.isoToLocalYMD(p.date);} 
                 } else { 
                     var sp=supPayments.find(function(x) { return x.id===id; }); 
-                    if(sp){if(gepEl) gepEl.value=sp.supplierId; if(geaEl) geaEl.value=sp.amountPaid; if(goaEl) goaEl.value=sp.amountPaid; if(gedEl) gedEl.value=sp.date.split('T')[0];} 
+                    if(sp){if(gepEl) gepEl.value=sp.supplierId; if(geaEl) geaEl.value=sp.amountPaid; if(goaEl) goaEl.value=sp.amountPaid; if(gedEl) gedEl.value=window.isoToLocalYMD(sp.date);} 
                 } 
             } else { 
                 if(mTitle) mTitle.innerText="Add Payment"; 
                 if(geaEl) geaEl.value=''; 
-                if(gedEl) gedEl.value=new Date().toISOString().split('T')[0]; 
+                if(gedEl) gedEl.value=window.getLocalTodayYMD(); 
             } 
             var mEl=document.getElementById('globalPaymentModal'); if(mEl) mEl.classList.remove('hidden'); toggleBodyScroll(true); 
         }
@@ -2173,7 +2173,8 @@
             var tEl=document.getElementById('gpEntryType'); var pEl=document.getElementById('gpEntryParty'); var aEl=document.getElementById('gpEntryAmount'); var dEl=document.getElementById('gpEntryDate'); var eIdEl=document.getElementById('gpEntryId'); var goaEl=document.getElementById('gpOldAmount');
             if(!tEl || !pEl || !aEl) return; 
             var t=tEl.value; var pId=pEl.value; var am=parseFloat(aEl.value); var dt=dEl?dEl.value:null; var eId=eIdEl?eIdEl.value:''; var oa=parseFloat(goaEl?goaEl.value:0)||0;
-            var tD=dt?new Date(dt).toISOString():new Date().toISOString(); 
+            var existingPayObj = eId ? ((t==='IN' ? payments : supPayments).find(function(x){ return x.id === eId; })) : null;
+            var tD = window.buildAccurateTimestamp(dt, existingPayObj ? existingPayObj.date : null); 
             if(t==='IN'){ 
                 var c=customers.find(function(x) { return x.id===pId; }); if(!c)return; 
                 c.balanceDue=(c.balanceDue||0)+oa-am; var rn='PAY-'+Math.floor(1000+Math.random()*9000); 
@@ -2266,7 +2267,7 @@
 
         function showPaymentReceipt(po,e,t){ 
             var prnEl=document.getElementById('payRcptNo'); if(prnEl) prnEl.innerText=po.invoiceNo||po.receiptNo; 
-            var prdEl=document.getElementById('payRcptDate'); if(prdEl) prdEl.innerText=new Date(po.date).toLocaleDateString(); 
+            var prdEl=document.getElementById('payRcptDate'); if(prdEl) prdEl.innerHTML=window.formatAccurateDateTime(new Date(po.date), po.date); 
             var pplEl=document.getElementById('payPartyLabel'); if(pplEl) pplEl.innerText=t==='CUST'?'Customer:':'Supplier:'; 
             var prcnEl=document.getElementById('payRcptCustName'); if(prcnEl) prcnEl.innerText=e.name; 
             var praEl=document.getElementById('payRcptAmount'); if(praEl) praEl.innerText=currencyFormatter.format(po.amountPaid); 
@@ -2619,6 +2620,68 @@
 
     <script>
         // =========================================================================
+        // 0. ACCURATE LOCAL DATE & REAL-TIME IST CLOCK HELPER FUNCTIONS
+        // =========================================================================
+        window.getLocalTodayYMD = function() {
+            var now = new Date();
+            var y = now.getFullYear();
+            var m = String(now.getMonth() + 1).padStart(2, '0');
+            var d = String(now.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + d;
+        };
+
+        window.isoToLocalYMD = function(isoStr) {
+            if (!isoStr) return window.getLocalTodayYMD();
+            if (typeof isoStr === 'string' && isoStr.endsWith('T00:00:00.000Z')) {
+                return isoStr.split('T')[0];
+            }
+            var d = new Date(isoStr);
+            if (isNaN(d.getTime())) return window.getLocalTodayYMD();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        };
+
+        window.buildAccurateTimestamp = function(dateInputStr, existingIsoStr) {
+            var now = new Date();
+            if (!dateInputStr) return now.toISOString();
+            var cleanStr = dateInputStr.trim();
+            // If CSV or input already includes a specific time (e.g. "2026-10-30 16:15")
+            if (cleanStr.length > 10 && (cleanStr.includes(':') || cleanStr.includes('T'))) {
+                var parsed = new Date(cleanStr);
+                if (!isNaN(parsed.getTime())) return parsed.toISOString();
+            }
+            // If editing an existing entry and the date wasn't changed, keep its original accurate timestamp
+            if (existingIsoStr && typeof existingIsoStr === 'string' && !existingIsoStr.endsWith('T00:00:00.000Z')) {
+                var oldYMD = window.isoToLocalYMD(existingIsoStr);
+                if (oldYMD === cleanStr) return existingIsoStr;
+            }
+            var parts = cleanStr.split('-');
+            if (parts.length === 3) {
+                var dt = new Date(
+                    parseInt(parts[0], 10),
+                    parseInt(parts[1], 10) - 1,
+                    parseInt(parts[2], 10),
+                    now.getHours(),
+                    now.getMinutes(),
+                    now.getSeconds(),
+                    now.getMilliseconds()
+                );
+                if (!isNaN(dt.getTime())) return dt.toISOString();
+            }
+            return now.toISOString();
+        };
+
+        window.formatAccurateDateTime = function(dateObj, rawIsoStr) {
+            if (!dateObj || isNaN(dateObj.getTime())) return '-';
+            var dStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+            var tStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            // If an older entry was saved as midnight UTC (T00:00:00.000Z), show Date + (Old Entry) or clean badge instead of wrong 05:30 AM
+            if (rawIsoStr && typeof rawIsoStr === 'string' && rawIsoStr.endsWith('T00:00:00.000Z')) {
+                return dStr + ' <span class="text-[9px] text-zinc-400 font-medium">(Saved Date)</span>';
+            }
+            return dStr + ' <span class="text-[10px] font-extrabold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded ml-1">' + tStr.toUpperCase() + '</span>';
+        };
+
+        // =========================================================================
         // 1. MULTI-ITEM SALES BILLING (CREATE + EDIT + DELETE)
         // =========================================================================
         window.toggleMsExtraCharge = function(show) {
@@ -2641,7 +2704,7 @@
             document.getElementById('msModalTitle').innerHTML = '🧾 Create Sales Invoice (Multi-Item)';
             document.getElementById('msSubmitBtn').innerHTML = '✅ Save & Print Bill';
             document.getElementById('msInvoiceNo').value = 'INV-' + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('msDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('msDate').value = window.getLocalTodayYMD();
             document.getElementById('msExtraLabel').value = 'Transport / भाड़ा';
             toggleMsExtraCharge(false);
             
@@ -2674,7 +2737,7 @@
             document.getElementById('msModalTitle').innerHTML = '✏️ Edit Sales Invoice (' + invoiceNo + ')';
             document.getElementById('msSubmitBtn').innerHTML = '💾 Update & Print Bill';
             document.getElementById('msInvoiceNo').value = invoiceNo;
-            document.getElementById('msDate').value = firstOrd.date ? firstOrd.date.split('T')[0] : new Date().toISOString().split('T')[0];
+            document.getElementById('msDate').value = firstOrd.date ? window.isoToLocalYMD(firstOrd.date) : window.getLocalTodayYMD();
 
             var cs = document.getElementById('msCustomerSelect');
             cs.innerHTML = '';
@@ -2872,7 +2935,8 @@
             var originalInvNo = document.getElementById('msEditOriginalInv').value;
             var invNo = document.getElementById('msInvoiceNo').value.trim();
             var invDateVal = document.getElementById('msDate').value;
-            var isoDate = invDateVal ? new Date(invDateVal).toISOString() : new Date().toISOString();
+            var existingOrdForTime = originalInvNo ? orders.find(function(o) { return o.invoiceNo === originalInvNo; }) : null;
+            var isoDate = window.buildAccurateTimestamp(invDateVal, existingOrdForTime ? existingOrdForTime.date : null);
             
             var custId = document.getElementById('msCustomerSelect').value;
             var custObj = null;
@@ -3012,7 +3076,7 @@
             document.getElementById('mpModalTitle').innerHTML = '📥 Record Purchase Bill (Multi-Item)';
             document.getElementById('mpSubmitBtn').innerHTML = '✅ Save Purchase Bill';
             document.getElementById('mpInvoiceNo').value = 'BILL-' + Math.floor(100000 + Math.random() * 900000);
-            document.getElementById('mpDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('mpDate').value = window.getLocalTodayYMD();
             document.getElementById('mpExtraLabel').value = 'Transport / भाड़ा';
             document.getElementById('mpAmountPaid').value = '0';
             toggleMpExtraCharge(false);
@@ -3040,7 +3104,7 @@
             var s = suppliers.find(function(x) { return x.id === p.supplierId; }) || {};
 
             document.getElementById('purRcptInvoice').innerText = p.invoiceNo;
-            document.getElementById('purRcptDate').innerText = new Date(p.date).toLocaleDateString();
+            document.getElementById('purRcptDate').innerHTML = window.formatAccurateDateTime(new Date(p.date), p.date);
             document.getElementById('purRcptSuppName').innerText = s.name || 'Supplier';
             document.getElementById('purRcptSuppPhone').innerText = s.phone || '-';
 
@@ -3086,7 +3150,7 @@
             document.getElementById('mpModalTitle').innerHTML = '✏️ Edit Purchase Bill (' + billNo + ')';
             document.getElementById('mpSubmitBtn').innerHTML = '💾 Update Purchase Bill';
             document.getElementById('mpInvoiceNo').value = billNo;
-            document.getElementById('mpDate').value = firstPur.date ? firstPur.date.split('T')[0] : new Date().toISOString().split('T')[0];
+            document.getElementById('mpDate').value = firstPur.date ? window.isoToLocalYMD(firstPur.date) : window.getLocalTodayYMD();
 
             var ss = document.getElementById('mpSupplierSelect');
             ss.innerHTML = '';
@@ -3276,7 +3340,8 @@
             var originalBillNo = document.getElementById('mpEditOriginalInv').value;
             var billNo = document.getElementById('mpInvoiceNo').value.trim();
             var purDateVal = document.getElementById('mpDate').value;
-            var isoDate = purDateVal ? new Date(purDateVal).toISOString() : new Date().toISOString();
+            var existingPurForTime = originalBillNo ? purchases.find(function(p) { return p.invoiceNo === originalBillNo; }) : null;
+            var isoDate = window.buildAccurateTimestamp(purDateVal, existingPurForTime ? existingPurForTime.date : null);
 
             var suppId = document.getElementById('mpSupplierSelect').value;
             var suppObj = null;
@@ -3399,7 +3464,7 @@
             var c = customers.find(function(x) { return x.id === o.customerId; }) || {};
 
             document.getElementById('rcptInvoice').innerText = o.invoiceNo;
-            document.getElementById('rcptDate').innerText = new Date(o.date).toLocaleDateString();
+            document.getElementById('rcptDate').innerHTML = window.formatAccurateDateTime(new Date(o.date), o.date);
             document.getElementById('rcptCustName').innerText = c.name || 'Walk-in';
             var rcpEl = document.getElementById('rcptCustPhone');
             if(rcpEl) rcpEl.innerText = c.phone || '-';
@@ -3475,7 +3540,7 @@
                 var groupedOrders = {};
                 orders.filter(function(o) { return o.customerId === id; }).forEach(function(o) {
                     if(!groupedOrders[o.invoiceNo]) {
-                        groupedOrders[o.invoiceNo] = { id: o.id, d: new Date(o.date), rf: o.invoiceNo, nt: 'Sales Invoice', amt: 0, pd: 0, qty: 0, kind: 'SALE' };
+                        groupedOrders[o.invoiceNo] = { id: o.id, d: new Date(o.date), rawDate: o.date, rf: o.invoiceNo, nt: 'Sales Invoice', amt: 0, pd: 0, qty: 0, kind: 'SALE' };
                     }
                     var rAmt = parseFloat(o.totalAmount) || 0;
                     var rPd = parseFloat(o.amountPaid) || 0;
@@ -3493,7 +3558,7 @@
                 payments.filter(function(p) { return p.customerId === id; }).forEach(function(p) {
                     var pAmt = parseFloat(p.amountPaid) || 0;
                     totalPaidAmt += pAmt;
-                    tr.push({ id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Payment Received', amt: 0, pd: pAmt, qty: 0, kind: 'PAY_IN' });
+                    tr.push({ id: p.id, d: new Date(p.date), rawDate: p.date, rf: p.invoiceNo, nt: 'Payment Received', amt: 0, pd: pAmt, qty: 0, kind: 'PAY_IN' });
                 });
                 document.getElementById('historyTitle').innerText = '📒 Customer Ledger: ' + c.name;
             } else {
@@ -3507,7 +3572,7 @@
                 var groupedPurchases = {};
                 purchases.filter(function(p) { return p.supplierId === id; }).forEach(function(p) {
                     if(!groupedPurchases[p.invoiceNo]) {
-                        groupedPurchases[p.invoiceNo] = { id: p.id, d: new Date(p.date), rf: p.invoiceNo, nt: 'Purchase Bill', amt: 0, pd: 0, qty: 0, kind: 'PURCHASE' };
+                        groupedPurchases[p.invoiceNo] = { id: p.id, d: new Date(p.date), rawDate: p.date, rf: p.invoiceNo, nt: 'Purchase Bill', amt: 0, pd: 0, qty: 0, kind: 'PURCHASE' };
                     }
                     var rAmt = parseFloat(p.totalAmount) || 0;
                     var rPd = parseFloat(p.amountPaid) || 0;
@@ -3525,7 +3590,7 @@
                 supPayments.filter(function(p) { return p.supplierId === id; }).forEach(function(p) {
                     var pAmt = parseFloat(p.amountPaid) || 0;
                     totalPaidAmt += pAmt;
-                    tr.push({ id: p.id, d: new Date(p.date), rf: p.receiptNo, nt: 'Payment Given', amt: 0, pd: pAmt, qty: 0, kind: 'PAY_OUT' });
+                    tr.push({ id: p.id, d: new Date(p.date), rawDate: p.date, rf: p.receiptNo, nt: 'Payment Given', amt: 0, pd: pAmt, qty: 0, kind: 'PAY_OUT' });
                 });
                 document.getElementById('historyTitle').innerText = '📒 Supplier Ledger: ' + s.name;
             }
@@ -3615,7 +3680,7 @@
 
                     var qtyColText = x.qty > 0 ? '<span class="px-1.5 py-0.5 bg-zinc-100 text-zinc-800 rounded font-bold">' + x.qty + '</span>' : '-';
                     var balColor = x.bal > 0 ? 'text-red-600' : 'text-emerald-600';
-                    var dateTimeStr = x.d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' <span class="text-[9px] text-zinc-400">' + x.d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '</span>';
+                    var dateTimeStr = window.formatAccurateDateTime(x.d, x.rawDate);
 
                     h += '<tr class="hover:bg-zinc-50 border-b border-zinc-100">' +
                         '<td class="p-2 text-zinc-600 font-semibold">' + dateTimeStr + '</td>' +
@@ -3838,7 +3903,7 @@
                         if (!billGroups[billNo]) {
                             billGroups[billNo] = {
                                 billNo: billNo,
-                                date: cols[1].trim() ? new Date(cols[1].trim()).toISOString() : new Date().toISOString(),
+                                date: window.buildAccurateTimestamp(cols[1].trim(), null),
                                 supName: cols[2].trim() || 'Unknown Supplier',
                                 supPhone: cols[3].trim() || '0000000000',
                                 amountPaid: rowPaid,
@@ -4009,7 +4074,7 @@
                         if (!invGroups[invNo]) {
                             invGroups[invNo] = {
                                 invNo: invNo,
-                                date: cols[1].trim() ? new Date(cols[1].trim()).toISOString() : new Date().toISOString(),
+                                date: window.buildAccurateTimestamp(cols[1].trim(), null),
                                 custName: cols[2].trim() || 'Walk-in Customer',
                                 custPhone: cols[3].trim() || '0000000000',
                                 custAddr: cols[4].trim() || 'LOCAL',
